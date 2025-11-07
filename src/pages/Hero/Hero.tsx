@@ -1,5 +1,3 @@
-import "./index.scss";
-
 import heroVideo from "@/assets/videos/hero-video.mp4";
 import coffeeCup from "@/assets/icons/coffee-cup.svg";
 import mobileScreens from "@/assets/icons/mobile-screens.svg";

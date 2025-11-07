@@ -1,5 +1,3 @@
-import "../index.scss";
-
 const Registration = () => {
   return (
     <div className="sections">

@@ -1,5 +1,3 @@
-import "./index.scss";
-
 const Shop = () => {
   return (
     <div className="sections">

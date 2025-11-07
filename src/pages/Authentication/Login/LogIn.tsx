@@ -1,5 +1,3 @@
-import "../index.scss";
-
 const LogIn = () => {
   return (
     <div className="sections">

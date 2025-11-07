@@ -1,4 +1,3 @@
-import "./index.scss";
 
 import pinAlt from "@/assets/icons/pin-alt.svg";
 import phone from "@/assets/icons/phone.svg";

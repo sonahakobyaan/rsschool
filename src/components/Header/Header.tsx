@@ -1,4 +1,3 @@
-import "./index.scss";
 
 import logo from "@/assets/icons/logo.svg";
 import shoopingBag from "@/assets/icons/shopping-bag.svg";
