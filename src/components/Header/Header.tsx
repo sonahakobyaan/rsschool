@@ -1,12 +1,14 @@
+import "./index.scss";
+
+import logo from "@/assets/icons/logo.svg";
+import shoopingBag from "@/assets/icons/shopping-bag.svg";
+import coffeeCupIcon from "@/assets/icons/coffee-cup.svg";
+
 const Header = () => {
   return (
     <header>
       <a href="/">
-        <img
-          src="./assets/icons/logo.svg"
-          className="logo"
-          alt="Coffee House Logo"
-        />
+        <img src={logo} className="logo" alt="Coffee House Logo" />
       </a>
       <nav className="nav-links">
         <div className="center-links">
@@ -17,16 +19,12 @@ const Header = () => {
         </div>
         <div className="menu-right-hand">
           <a href="shoop.html">
-            <img src="./assets/icons/shopping-bag.svg" alt="shooping-bag" />
+            <img src={shoopingBag} alt="shooping-bag" />
           </a>
           <a href="menu.html">
             <div className="menu-container">
               <p>Menu</p>
-              <img
-                src="./assets/icons/coffee-cup.svg"
-                className="menu"
-                alt="Coffee Cup Icon"
-              />
+              <img src={coffeeCupIcon} className="menu" alt="Coffee Cup Icon" />
             </div>
           </a>
         </div>
