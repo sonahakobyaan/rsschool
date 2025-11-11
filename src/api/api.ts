@@ -20,7 +20,7 @@ export async function fetchFavorites(): Promise<Product[]> {
       name: item.name,
       description: item.description,
       price: parseFloat(item.price),
-      imageUrl: item.imageUrl || "/coffees/default.jpg", // fallback image
+      imageUrl: item.imageUrl || "/coffees/default.jpg",
       isFavorite: true,
     }));
     return cachedFavorites;

@@ -4,35 +4,35 @@ import coffeeCup from "@/assets/icons/coffee-cup.svg";
 import mobileScreens from "@/assets/icons/mobile-screens.svg";
 import type { Product } from "@/types/product";
 import { fetchFavorites } from "@/api/api";
-
+import { coffeeSliderImages } from "@/assets/icons/coffe-slider/coffeeSlider";
 const Hero = () => {
   const [coffees, setCoffees] = useState<Product[]>([]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-const hasFetchedRef = useRef(false);
+  const hasFetchedRef = useRef(false);
 
-useEffect(() => {
-  if (hasFetchedRef.current) return;
-  hasFetchedRef.current = true;
+  useEffect(() => {
+    if (hasFetchedRef.current) return;
+    hasFetchedRef.current = true;
 
-  const getFavorites = async () => {
-    setLoading(true);
-    try {
-      const favorites = await fetchFavorites();
-      setCoffees(favorites);
-      setError("");
-    } catch (err) {
-      setError("Failed to load favorite coffees");
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const getFavorites = async () => {
+      setLoading(true);
+      try {
+        const favorites = await fetchFavorites();
+        setCoffees(favorites);
+        setError("");
+      } catch (err) {
+        setError("Failed to load favorite coffees");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  getFavorites();
-}, []);
+    getFavorites();
+  }, []);
 
   useEffect(() => {
     if (coffees.length === 0) return;
@@ -80,7 +80,11 @@ useEffect(() => {
         </h2>
 
         {loading && <div className="loader" id="coffee-loader"></div>}
-        {error && <div className="about-h1" id="failed_load">{error}</div>}
+        {error && (
+          <div className="about-h1" id="failed_load">
+            {error}
+          </div>
+        )}
 
         <div className="coffe-slideshow-container">
           {coffees.map((coffee, index) => (
@@ -89,7 +93,7 @@ useEffect(() => {
               className="slide"
               style={{ display: index === currentSlide ? "block" : "none" }}
             >
-              <img src={coffee.imageUrl} alt={coffee.name} />
+              <img src={coffeeSliderImages[index]} alt={coffee.name} />
               <p>{coffee.name}</p>
             </div>
           ))}
