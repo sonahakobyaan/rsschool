@@ -12,13 +12,12 @@ const Hero = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isPaused, setIsPaused] = useState(false);
-  const hasFetchedRef = useRef(false);
-  const autoSlideRef = useRef<NodeJS.Timeout | null>(null);
+
+  const slideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const slideStartTimeRef = useRef<number>(0); // Timestamp when slide started
+  const remainingTimeRef = useRef<number>(3000); // Remaining time in ms
 
   useEffect(() => {
-    if (hasFetchedRef.current) return;
-    hasFetchedRef.current = true;
-
     const getFavorites = async () => {
       setLoading(true);
       try {
@@ -36,25 +35,60 @@ const Hero = () => {
     getFavorites();
   }, []);
 
+  const startSlideTimer = (duration = 3000) => {
+    slideStartTimeRef.current = Date.now();
+    slideTimeoutRef.current = setTimeout(() => {
+      setCurrentSlide((prev) => (prev + 1) % coffees.length);
+      remainingTimeRef.current = 3000; // reset for next slide
+    }, duration);
+  };
+
   useEffect(() => {
     if (coffees.length === 0) return;
-
     if (!isPaused) {
-      autoSlideRef.current = setInterval(() => {
-        setCurrentSlide((prev) => (prev + 1) % coffees.length);
-      }, 3000);
+      startSlideTimer(remainingTimeRef.current);
     }
 
     return () => {
-      if (autoSlideRef.current) clearInterval(autoSlideRef.current);
+      if (slideTimeoutRef.current) clearTimeout(slideTimeoutRef.current);
     };
-  }, [coffees, isPaused]);
+  }, [coffees, currentSlide, isPaused]);
+
+  const pauseTimer = () => {
+    if (slideTimeoutRef.current) {
+      clearTimeout(slideTimeoutRef.current);
+      const elapsed = Date.now() - slideStartTimeRef.current;
+      remainingTimeRef.current = Math.max(
+        0,
+        remainingTimeRef.current - elapsed
+      );
+    }
+  };
+
+  const resumeTimer = () => {
+    if (!isPaused) return;
+    startSlideTimer(remainingTimeRef.current);
+  };
+
+  const handleMouseEnter = () => {
+    setIsPaused(true);
+    pauseTimer();
+  };
+
+  const handleMouseLeave = () => {
+    setIsPaused(false);
+    resumeTimer();
+  };
 
   const nextSlide = () => {
+    if (slideTimeoutRef.current) clearTimeout(slideTimeoutRef.current);
+    remainingTimeRef.current = 3000; // reset timer
     setCurrentSlide((prev) => (prev + 1) % coffees.length);
   };
 
   const prevSlide = () => {
+    if (slideTimeoutRef.current) clearTimeout(slideTimeoutRef.current);
+    remainingTimeRef.current = 3000; // reset timer
     setCurrentSlide((prev) => (prev - 1 + coffees.length) % coffees.length);
   };
 
@@ -104,8 +138,8 @@ const Hero = () => {
           <button
             className="prev"
             onClick={prevSlide}
-            onMouseEnter={() => setIsPaused(true)}
-            onMouseLeave={() => setIsPaused(false)}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
           >
             <svg
               width="60"
@@ -146,8 +180,8 @@ const Hero = () => {
           <button
             className="next"
             onClick={nextSlide}
-            onMouseEnter={() => setIsPaused(true)}
-            onMouseLeave={() => setIsPaused(false)}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
           >
             <svg
               width="60"
@@ -189,6 +223,8 @@ const Hero = () => {
               key={index}
               className={`line ${index === currentSlide ? "active" : ""}`}
               onClick={() => setCurrentSlide(index)}
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
             ></span>
           ))}
         </div>
