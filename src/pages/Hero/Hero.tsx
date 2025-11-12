@@ -1,18 +1,19 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import heroVideo from "@/assets/videos/hero-video.mp4";
 import coffeeCup from "@/assets/icons/coffee-cup.svg";
 import mobileScreens from "@/assets/icons/mobile-screens.svg";
 import type { Product } from "@/types/product";
 import { fetchFavorites } from "@/api/api";
 import { coffeeSliderImages } from "@/assets/icons/coffe-slider/coffeeSlider";
+
 const Hero = () => {
   const [coffees, setCoffees] = useState<Product[]>([]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
   const hasFetchedRef = useRef(false);
 
+  // Fetch favorite coffees once
   useEffect(() => {
     if (hasFetchedRef.current) return;
     hasFetchedRef.current = true;
@@ -34,9 +35,9 @@ const Hero = () => {
     getFavorites();
   }, []);
 
+  // Auto-slide carousel
   useEffect(() => {
     if (coffees.length === 0) return;
-
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % coffees.length);
     }, 3000);
@@ -44,8 +45,17 @@ const Hero = () => {
     return () => clearInterval(timer);
   }, [coffees]);
 
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % coffees.length);
+  };
+
+  const prevSlide = () => {
+    setCurrentSlide((prev) => (prev - 1 + coffees.length) % coffees.length);
+  };
+
   return (
     <div className="sections">
+      {/* Hero Section */}
       <section className="hero">
         <div className="hero-img">
           <video autoPlay muted loop playsInline className="hero-video">
@@ -74,6 +84,7 @@ const Hero = () => {
         </div>
       </section>
 
+      {/* Favorite Coffee Section */}
       <section id="favorite-coffee">
         <h2 className="about-h1">
           Choose your <span className="accent">favorite</span> coffee
@@ -87,16 +98,73 @@ const Hero = () => {
         )}
 
         <div className="coffe-slideshow-container">
+          <button className="prev" onClick={prevSlide}>
+            <a className="prev">
+              <svg
+                width="60"
+                height="60"
+                viewBox="0 0 60 60"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                className="background"
+              >
+                <rect
+                  x="0.5"
+                  y="0.5"
+                  width="59"
+                  height="59"
+                  rx="29.5"
+                  stroke="#665F55"
+                />
+                <path
+                  d="M36.5 30H24M24 30L30 24M24 30L30 36"
+                  className="arrow"
+                  stroke="#403F3D"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </a>
+          </button>
+
           {coffees.map((coffee, index) => (
             <div
               key={coffee.id}
-              className="slide"
-              style={{ display: index === currentSlide ? "block" : "none" }}
+              className={`slideItems ${index === currentSlide ? "fade" : ""}`}
+              style={{ display: index === currentSlide ? "flex" : "none" }}
             >
               <img src={coffeeSliderImages[index]} alt={coffee.name} />
               <p>{coffee.name}</p>
             </div>
           ))}
+
+          <button className="next" onClick={nextSlide}>
+            <a className="next">
+              <svg
+                width="60"
+                height="60"
+                viewBox="0 0 60 60"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <rect
+                  x="0.5"
+                  y="0.5"
+                  width="59"
+                  height="59"
+                  rx="29.5"
+                  stroke="#665F55"
+                />
+                <path
+                  d="M24 30H36.5M36.5 30L30.5 24M36.5 30L30.5 36"
+                  className="arrow"
+                  stroke="#403F3D"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </a>
+          </button>
         </div>
 
         <div className="dots-container">
@@ -110,6 +178,7 @@ const Hero = () => {
         </div>
       </section>
 
+      {/* About Section */}
       <section id="about">
         <h2 className="about-h1">
           Resource is
@@ -137,6 +206,7 @@ const Hero = () => {
         </div>
       </section>
 
+      {/* Mobile App Section */}
       <section id="mobile-app">
         <div className="container-col1">
           <h2 className="about-h1">
