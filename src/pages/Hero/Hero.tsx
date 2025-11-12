@@ -13,9 +13,10 @@ const Hero = () => {
   const [error, setError] = useState("");
   const [isPaused, setIsPaused] = useState(false);
 
-  const slideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const slideStartTimeRef = useRef<number>(0); // Timestamp when slide started
-  const remainingTimeRef = useRef<number>(3000); // Remaining time in ms
+  const slideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const slideStartTimeRef = useRef<number>(0);
+  const remainingTimeRef = useRef<number>(3000);
 
   useEffect(() => {
     const getFavorites = async () => {
@@ -39,7 +40,7 @@ const Hero = () => {
     slideStartTimeRef.current = Date.now();
     slideTimeoutRef.current = setTimeout(() => {
       setCurrentSlide((prev) => (prev + 1) % coffees.length);
-      remainingTimeRef.current = 3000; // reset for next slide
+      remainingTimeRef.current = 3000;
     }, duration);
   };
 
@@ -82,13 +83,13 @@ const Hero = () => {
 
   const nextSlide = () => {
     if (slideTimeoutRef.current) clearTimeout(slideTimeoutRef.current);
-    remainingTimeRef.current = 3000; // reset timer
+    remainingTimeRef.current = 3000;
     setCurrentSlide((prev) => (prev + 1) % coffees.length);
   };
 
   const prevSlide = () => {
     if (slideTimeoutRef.current) clearTimeout(slideTimeoutRef.current);
-    remainingTimeRef.current = 3000; // reset timer
+    remainingTimeRef.current = 3000;
     setCurrentSlide((prev) => (prev - 1 + coffees.length) % coffees.length);
   };
 
@@ -174,9 +175,9 @@ const Hero = () => {
             >
               <img src={coffeeSliderImages[index]} alt={coffee.name} />
               <div className="text">
-              <h3>{coffee.name}</h3>
-              <p>{coffee.description}</p>
-              <h4>${coffee.price.toFixed(2)}</h4>
+                <h3>{coffee.name}</h3>
+                <p>{coffee.description}</p>
+                <h4>${coffee.price.toFixed(2)}</h4>
               </div>
             </div>
           ))}
@@ -261,7 +262,7 @@ const Hero = () => {
         </div>
       </section>
 
-    <section id="mobile-app">
+      <section id="mobile-app">
         <div className="container-col1">
           <h2 className="about-h1">
             <span className="accent">Download </span> our apps to start ordering
@@ -309,8 +310,11 @@ const Hero = () => {
                 />
               </svg>
             </a>
-            <a className="store" href="https://play.google.com/store/games?hl=en"
-              ><svg
+            <a
+              className="store"
+              href="https://play.google.com/store/games?hl=en"
+            >
+              <svg
                 width="200"
                 height="64"
                 viewBox="0 0 200 64"

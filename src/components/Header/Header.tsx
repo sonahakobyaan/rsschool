@@ -20,7 +20,7 @@ const Header = () => {
           <a href="shoop.html">
             <img src={shoopingBag} alt="shooping-bag" />
           </a>
-          <a href="menu.html">
+          <a href="menu">
             <div className="menu-container">
               <p>Menu</p>
               <img src={coffeeCupIcon} className="menu" alt="Coffee Cup Icon" />
