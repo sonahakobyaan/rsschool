@@ -11,7 +11,9 @@ const Hero = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isPaused, setIsPaused] = useState(false);
   const hasFetchedRef = useRef(false);
+  const autoSlideRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch favorite coffees once
   useEffect(() => {
@@ -38,12 +40,17 @@ const Hero = () => {
   // Auto-slide carousel
   useEffect(() => {
     if (coffees.length === 0) return;
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % coffees.length);
-    }, 3000);
 
-    return () => clearInterval(timer);
-  }, [coffees]);
+    if (!isPaused) {
+      autoSlideRef.current = setInterval(() => {
+        setCurrentSlide((prev) => (prev + 1) % coffees.length);
+      }, 3000);
+    }
+
+    return () => {
+      if (autoSlideRef.current) clearInterval(autoSlideRef.current);
+    };
+  }, [coffees, isPaused]);
 
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % coffees.length);
@@ -98,33 +105,35 @@ const Hero = () => {
         )}
 
         <div className="coffe-slideshow-container">
-          <button className="prev" onClick={prevSlide}>
-            <a className="prev">
-              <svg
-                width="60"
-                height="60"
-                viewBox="0 0 60 60"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                className="background"
-              >
-                <rect
-                  x="0.5"
-                  y="0.5"
-                  width="59"
-                  height="59"
-                  rx="29.5"
-                  stroke="#665F55"
-                />
-                <path
-                  d="M36.5 30H24M24 30L30 24M24 30L30 36"
-                  className="arrow"
-                  stroke="#403F3D"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            </a>
+          <button
+            className="prev"
+            onClick={prevSlide}
+            onMouseEnter={() => setIsPaused(true)}
+            onMouseLeave={() => setIsPaused(false)}
+          >
+            <svg
+              width="60"
+              height="60"
+              viewBox="0 0 60 60"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <rect
+                x="0.5"
+                y="0.5"
+                width="59"
+                height="59"
+                rx="29.5"
+                stroke="#665F55"
+              />
+              <path
+                d="M36.5 30H24M24 30L30 24M24 30L30 36"
+                className="arrow"
+                stroke="#403F3D"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
           </button>
 
           {coffees.map((coffee, index) => (
@@ -138,40 +147,52 @@ const Hero = () => {
             </div>
           ))}
 
-          <button className="next" onClick={nextSlide}>
-            <a className="next">
-              <svg
-                width="60"
-                height="60"
-                viewBox="0 0 60 60"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <rect
-                  x="0.5"
-                  y="0.5"
-                  width="59"
-                  height="59"
-                  rx="29.5"
-                  stroke="#665F55"
-                />
-                <path
-                  d="M24 30H36.5M36.5 30L30.5 24M36.5 30L30.5 36"
-                  className="arrow"
-                  stroke="#403F3D"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            </a>
+          <button
+            className="next"
+            onClick={nextSlide}
+            onMouseEnter={() => setIsPaused(true)}
+            onMouseLeave={() => setIsPaused(false)}
+          >
+            <svg
+              width="60"
+              height="60"
+              viewBox="0 0 60 60"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <rect
+                x="0.5"
+                y="0.5"
+                width="59"
+                height="59"
+                rx="29.5"
+                stroke="#665F55"
+              />
+              <path
+                d="M24 30H36.5M36.5 30L30.5 24M36.5 30L30.5 36"
+                className="arrow"
+                stroke="#403F3D"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
           </button>
         </div>
 
-        <div className="dots-container">
+        {/* Loading bars at the bottom */}
+        {loading && (
+          <div className="loading-bars">
+            <div className="bar bar1"></div>
+            <div className="bar bar2"></div>
+            <div className="bar bar3"></div>
+          </div>
+        )}
+
+       <div className="dots-container">
           {coffees.map((_, index) => (
             <span
               key={index}
-              className={`dot ${index === currentSlide ? "active" : ""}`}
+              className={`line ${index === currentSlide ? "active" : ""}`}
               onClick={() => setCurrentSlide(index)}
             ></span>
           ))}
