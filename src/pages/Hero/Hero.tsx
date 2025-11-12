@@ -15,7 +15,6 @@ const Hero = () => {
   const hasFetchedRef = useRef(false);
   const autoSlideRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Fetch favorite coffees once
   useEffect(() => {
     if (hasFetchedRef.current) return;
     hasFetchedRef.current = true;
@@ -37,7 +36,6 @@ const Hero = () => {
     getFavorites();
   }, []);
 
-  // Auto-slide carousel
   useEffect(() => {
     if (coffees.length === 0) return;
 
@@ -62,7 +60,6 @@ const Hero = () => {
 
   return (
     <div className="sections">
-      {/* Hero Section */}
       <section className="hero">
         <div className="hero-img">
           <video autoPlay muted loop playsInline className="hero-video">
@@ -91,7 +88,6 @@ const Hero = () => {
         </div>
       </section>
 
-      {/* Favorite Coffee Section */}
       <section id="favorite-coffee">
         <h2 className="about-h1">
           Choose your <span className="accent">favorite</span> coffee
@@ -179,7 +175,6 @@ const Hero = () => {
           </button>
         </div>
 
-        {/* Loading bars at the bottom */}
         {loading && (
           <div className="loading-bars">
             <div className="bar bar1"></div>
@@ -188,7 +183,7 @@ const Hero = () => {
           </div>
         )}
 
-       <div className="dots-container">
+        <div className="dots-container">
           {coffees.map((_, index) => (
             <span
               key={index}
@@ -199,7 +194,6 @@ const Hero = () => {
         </div>
       </section>
 
-      {/* About Section */}
       <section id="about">
         <h2 className="about-h1">
           Resource is
@@ -227,7 +221,6 @@ const Hero = () => {
         </div>
       </section>
 
-      {/* Mobile App Section */}
       <section id="mobile-app">
         <div className="container-col1">
           <h2 className="about-h1">
