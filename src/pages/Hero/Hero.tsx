@@ -183,7 +183,7 @@ const Hero = () => {
           </div>
         )}
 
-        <div className="dots-container">
+        <div className={`dots-container ${isPaused ? "paused" : ""}`}>
           {coffees.map((_, index) => (
             <span
               key={index}

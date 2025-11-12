@@ -539,12 +539,23 @@ footer a {
   height: 100%;
   width: 0%;
   background-color: var(--border-light);
-  transition: width linear;
 }
 
 .line.active::before {
-  width: 100%;
-  transition: width 3s linear;
+  animation: fillWidth 3s linear forwards;
+}
+
+.dots-container.paused .line.active::before {
+  animation-play-state: paused;
+}
+
+@keyframes fillWidth {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
 }
 
 .fade-left {
