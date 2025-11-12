@@ -173,7 +173,11 @@ const Hero = () => {
               style={{ display: index === currentSlide ? "flex" : "none" }}
             >
               <img src={coffeeSliderImages[index]} alt={coffee.name} />
-              <p>{coffee.name}</p>
+              <div className="text">
+              <h3>{coffee.name}</h3>
+              <p>{coffee.description}</p>
+              <h4>${coffee.price.toFixed(2)}</h4>
+              </div>
             </div>
           ))}
 
