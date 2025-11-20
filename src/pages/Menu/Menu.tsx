@@ -35,31 +35,28 @@ const Menu = () => {
   const [selectedCategory, setSelectedCategory] = useState<Category>("coffee");
   const [rotating, setRotating] = useState(false);
 
-  // New states for mobile "Load More"
   const [windowWidth, setWindowWidth] = useState<number>(
     typeof window !== "undefined" ? window.innerWidth : 1000
   );
   const [visibleCount, setVisibleCount] =
     useState<number>(INITIAL_MOBILE_COUNT);
 
-  // Track window resize
   useEffect(() => {
     const handleResize = () => {
       setWindowWidth(window.innerWidth);
     };
 
     window.addEventListener("resize", handleResize);
-    handleResize(); // Initial check
+    handleResize();
 
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Reset visible count when category changes or screen size crosses breakpoint
   useEffect(() => {
     if (windowWidth < MOBILE_BREAKPOINT) {
       setVisibleCount(INITIAL_MOBILE_COUNT);
     } else {
-      setVisibleCount(Infinity); // Show all on desktop
+      setVisibleCount(Infinity);
     }
   }, [selectedCategory, windowWidth]);
 
@@ -69,7 +66,7 @@ const Menu = () => {
         const data = await fetchProducts();
         setProducts(data);
         setError(null);
-      } catch (err) {
+      } catch {
         setError("Failed to load products. Please try again.");
       } finally {
         setLoading(false);
@@ -109,8 +106,11 @@ const Menu = () => {
 
   const handleLoadMore = () => {
     setRotating(true);
-    setVisibleCount((prev) => prev + LOAD_MORE_STEP);
-    setTimeout(() => setRotating(false), 800);
+setTimeout(() => {
+  setRotating(false);
+  setVisibleCount((prev) => prev + LOAD_MORE_STEP);
+}, 1000);
+
   };
 
   if (loading) {
@@ -222,8 +222,7 @@ const Menu = () => {
                 );
               })}
 
-              {/* Load More Button - Only on mobile */}
-              {isMobile && hasMore && (
+              {isMobile && (hasMore || rotating) && (
                 <button onClick={handleLoadMore} className="load-more">
                   <svg
                     width="60"
