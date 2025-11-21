@@ -38,9 +38,13 @@ const Menu = () => {
   const [windowWidth, setWindowWidth] = useState<number>(
     typeof window !== "undefined" ? window.innerWidth : 1000
   );
-  const [visibleCount, setVisibleCount] =
-    useState<number>(INITIAL_MOBILE_COUNT);
+  const [visibleCount, setVisibleCount] = useState<number>(INITIAL_MOBILE_COUNT);
 
+  // Login state
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  // Modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [detailedProduct, setDetailedProduct] = useState<
     (Product & { categoryIndex?: number }) | null
@@ -48,6 +52,32 @@ const Menu = () => {
   const [modalLoading, setModalLoading] = useState(false);
   const [selectedSize, setSelectedSize] = useState<string>("s");
   const [selectedAdditives, setSelectedAdditives] = useState<string[]>([]);
+
+  // Check login status from localStorage
+  useEffect(() => {
+    const checkLoginStatus = () => {
+      const token = localStorage.getItem("access_token");
+      const user = localStorage.getItem("user");
+
+      if (token && user) {
+        try {
+          const parsedUser = JSON.parse(user);
+          setIsLoggedIn(true);
+          setCurrentUser(parsedUser);
+        } catch (e) {
+          setIsLoggedIn(false);
+          setCurrentUser(null);
+        }
+      } else {
+        setIsLoggedIn(false);
+        setCurrentUser(null);
+      }
+    };
+
+    checkLoginStatus();
+    window.addEventListener("storage", checkLoginStatus);
+    return () => window.removeEventListener("storage", checkLoginStatus);
+  }, []);
 
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
@@ -106,7 +136,6 @@ const Menu = () => {
     try {
       const fullProduct = await fetchProductById(product.id);
       const productWithIndex = { ...fullProduct, categoryIndex };
-
       setDetailedProduct(productWithIndex);
 
       const availableSizeKey = fullProduct.sizes
@@ -141,53 +170,48 @@ const Menu = () => {
     );
   };
 
+  // Updated calculatePrice — only apply discount if logged in
   const calculatePrice = () => {
-    if (!detailedProduct) return { base: 0, discount: 0 };
+    if (!detailedProduct) return { base: 0, discount: 0, showDiscount: false };
 
     const sizeData = detailedProduct.sizes?.[selectedSize];
-
-    // 1. Base price of selected size (fallback to root price)
     const sizeBasePrice = sizeData?.price
       ? parseFloat(sizeData.price)
       : parseFloat(detailedProduct.price);
 
-    // 2. Discounted price of selected size (only if exists)
-    const sizeDiscountPrice = sizeData?.discountPrice
+    const shouldApplyDiscount = isLoggedIn;
+
+    const sizeDiscountPrice = shouldApplyDiscount && sizeData?.discountPrice
       ? parseFloat(sizeData.discountPrice)
       : null;
 
-    // 3. Calculate additives: regular total
     const additivesBaseTotal = selectedAdditives.reduce((sum, name) => {
       const additive = detailedProduct.additives?.find((a) => a.name === name);
       return sum + (additive?.price ? parseFloat(additive.price) : 0);
     }, 0);
 
-    // 4. Calculate additives: discounted total (fallback to regular price if no discount)
     const additivesDiscountTotal = selectedAdditives.reduce((sum, name) => {
       const additive = detailedProduct.additives?.find((a) => a.name === name);
-      const discounted = additive?.discountPrice
-        ? parseFloat(additive.discountPrice)
-        : additive?.price
-        ? parseFloat(additive.price)
-        : 0;
-      return sum + discounted;
+      if (!shouldApplyDiscount) {
+        return sum + (additive?.price ? parseFloat(additive.price) : 0);
+      }
+      return sum + (additive?.discountPrice ? parseFloat(additive.discountPrice) : additive?.price ? parseFloat(additive.price) : 0);
     }, 0);
 
-    // 5. Final prices
     const totalBase = sizeBasePrice + additivesBaseTotal;
-    const totalDiscount =
-      sizeDiscountPrice !== null
-        ? sizeDiscountPrice + additivesDiscountTotal
-        : totalBase; // no discount if size has no discountPrice
+    const totalDiscount = sizeDiscountPrice !== null
+      ? sizeDiscountPrice + additivesDiscountTotal
+      : totalBase;
 
     return {
       base: totalBase,
       discount: totalDiscount,
+      showDiscount: shouldApplyDiscount && totalDiscount < totalBase,
     };
   };
-  const { base: price, discount: discountPrice } = detailedProduct
-    ? calculatePrice()
-    : { base: 0, discount: 0 };
+
+  const priceResult = detailedProduct ? calculatePrice() : { base: 0, discount: 0, showDiscount: false };
+  const { base: price, discount: discountPrice, showDiscount } = priceResult;
 
   const isMobile = windowWidth < MOBILE_BREAKPOINT;
   const displayedProducts = isMobile
@@ -205,6 +229,14 @@ const Menu = () => {
     }, 1000);
   };
 
+  // Helper to get display price in product grid
+  const getDisplayPrice = (product: Product) => {
+    if (isLoggedIn && product.discountPrice && parseFloat(product.discountPrice) < parseFloat(product.price)) {
+      return { price: product.discountPrice, original: product.price };
+    }
+    return { price: product.price, original: null };
+  };
+
   if (loading)
     return (
       <div className="sections">
@@ -213,6 +245,7 @@ const Menu = () => {
         </section>
       </div>
     );
+
   if (error)
     return (
       <div className="sections">
@@ -234,9 +267,7 @@ const Menu = () => {
             {categories.map((cat) => (
               <button
                 key={cat}
-                className={`category-div ${
-                  selectedCategory === cat ? "selected" : ""
-                }`}
+                className={`category-div ${selectedCategory === cat ? "selected" : ""}`}
                 onClick={() => setSelectedCategory(cat)}
               >
                 <div className="img-div">
@@ -249,11 +280,7 @@ const Menu = () => {
         </section>
 
         <section className="data">
-          <div
-            className={
-              !filteredProducts.length ? "error-container" : "data-container"
-            }
-          >
+          <div className={!filteredProducts.length ? "error-container" : "data-container"}>
             {!filteredProducts.length ? (
               <p className="about-h1">
                 Something went wrong. Please refresh the page
@@ -264,8 +291,9 @@ const Menu = () => {
                   const categoryIndex =
                     filteredProducts
                       .slice(0, idx + 1)
-                      .filter((p) => p.category === product.category).length -
-                    1;
+                      .filter((p) => p.category === product.category).length - 1;
+
+                  const { price: displayPrice, original } = getDisplayPrice(product);
 
                   return (
                     <div
@@ -295,10 +323,16 @@ const Menu = () => {
                           <p className="description">{product.description}</p>
                         </div>
                         <div className="item_price">
-                          $
-                          {product.discountPrice
-                            ? product.discountPrice.toFixed(2)
-                            : product.price.toFixed(2)}
+                          {original ? (
+                            <>
+                              <span className="original-price">
+                                ${parseFloat(original).toFixed(2)}
+                              </span>{" "}
+                              <strong>${parseFloat(displayPrice).toFixed(2)}</strong>
+                            </>
+                          ) : (
+                            <strong>${parseFloat(displayPrice).toFixed(2)}</strong>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -315,14 +349,7 @@ const Menu = () => {
                       xmlns="http://www.w3.org/2000/svg"
                       className={`rotate-icon ${rotating ? "rotating" : ""}`}
                     >
-                      <rect
-                        x="0.5"
-                        y="0.5"
-                        width="59"
-                        height="59"
-                        rx="29.5"
-                        stroke="#665F55"
-                      />
+                      <rect x="0.5" y="0.5" width="59" height="59" rx="29.5" stroke="#665F55" />
                       <path
                         className="path"
                         d="M39.8883 31.5C39.1645 36.3113 35.013 40 30 40C24.4772 40 20 35.5228 20 30C20 24.4772 24.4772 20 30 20C34.1006 20 37.6248 22.4682 39.1679 26"
@@ -346,6 +373,7 @@ const Menu = () => {
         </section>
       </div>
 
+      {/* MODAL */}
       {modalOpen && (
         <div id="product-modal" className="modal" style={{ display: "block" }} onClick={closeModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -368,10 +396,7 @@ const Menu = () => {
                 <>
                   <img
                     id="modal-image"
-                    src={getCategoryImage(
-                      detailedProduct.category,
-                      detailedProduct.categoryIndex || 0
-                    )}
+                    src={getCategoryImage(detailedProduct.category, detailedProduct.categoryIndex || 0)}
                     alt={detailedProduct.name}
                   />
                   <div className="modal-content-text">
@@ -382,74 +407,61 @@ const Menu = () => {
                       {detailedProduct.description}
                     </p>
 
-                    {/* SIZES — Only render sizes that exist */}
-                    {detailedProduct.sizes &&
-                      Object.keys(detailedProduct.sizes).length > 0 && (
-                        <div id="size">
-                          <p className="descp">Size</p>
-                          <div id="sizes">
-                            {Object.entries(detailedProduct.sizes).map(
-                              ([key, size]) => (
-                                <button
-                                  key={key}
-                                  className={`modal-size-btn ${
-                                    selectedSize === key ? "selected" : ""
-                                  }`}
-                                  onClick={() => setSelectedSize(key)}
-                                >
-                                  <div className="modal-size-bg">
-                                    {key.toUpperCase()}
-                                  </div>
-                                  <span className="size-text">{size.size}</span>
-                                </button>
-                              )
-                            )}
-                          </div>
+                    {/* SIZES */}
+                    {detailedProduct.sizes && Object.keys(detailedProduct.sizes).length > 0 && (
+                      <div id="size">
+                        <p className="descp">Size</p>
+                        <div id="sizes">
+                          {Object.entries(detailedProduct.sizes).map(([key, size]) => (
+                            <button
+                              key={key}
+                              className={`modal-size-btn ${selectedSize === key ? "selected" : ""}`}
+                              onClick={() => setSelectedSize(key)}
+                            >
+                              <div className="modal-size-bg">{key.toUpperCase()}</div>
+                              <span className="size-text">{size.size}</span>
+                            </button>
+                          ))}
                         </div>
-                      )}
+                      </div>
+                    )}
 
                     {/* ADDITIVES */}
-                    {detailedProduct.additives &&
-                      detailedProduct.additives.length > 0 && (
-                        <div id="additive">
-                          <p className="descp">Additives</p>
-                          <div id="additives">
-                            {detailedProduct.additives.map((add, i) => (
-                              <button
-                                key={i}
-                                className={`modal-size-btn additive-btn ${
-                                  selectedAdditives.includes(add.name)
-                                    ? "selected"
-                                    : ""
-                                }`}
-                                onClick={() => toggleAdditive(add.name)}
-                                disabled={
-                                  selectedAdditives.length >= 3 &&
-                                  !selectedAdditives.includes(add.name)
-                                }
-                              >
-                                <div className="modal-size-bg">{i + 1}</div>
-                                <span className="size-text">{add.name}</span>
-                              </button>
-                            ))}
-                          </div>
+                    {detailedProduct.additives && detailedProduct.additives.length > 0 && (
+                      <div id="additive">
+                        <p className="descp">Additives</p>
+                        <div id="additives">
+                          {detailedProduct.additives.map((add, i) => (
+                            <button
+                              key={i}
+                              className={`modal-size-btn additive-btn ${
+                                selectedAdditives.includes(add.name) ? "selected" : ""
+                              }`}
+                              onClick={() => toggleAdditive(add.name)}
+                              disabled={
+                                selectedAdditives.length >= 3 && !selectedAdditives.includes(add.name)
+                              }
+                            >
+                              <div className="modal-size-bg">{i + 1}</div>
+                              <span className="size-text">{add.name}</span>
+                            </button>
+                          ))}
                         </div>
-                      )}
+                      </div>
+                    )}
 
-                    {/* PRICE */}
+                    {/* PRICE — Only show discount if logged in */}
                     <div className="modal-div">
                       <h3 className="about-h1 modal-price-h1">Total:</h3>
                       <div className="price-container">
                         <h3
                           id="modal-price"
-                          className={
-                            discountPrice < price ? "horisontal-line" : ""
-                          }
+                          className={showDiscount ? "horisontal-line" : ""}
                         >
                           ${price.toFixed(2)}
                         </h3>
-                        {discountPrice < price && (
-                          <h3 id="modal-discount">
+                        {showDiscount && (
+                          <h3 id="modal-discount" className="discounted-price">
                             ${discountPrice.toFixed(2)}
                           </h3>
                         )}
@@ -459,10 +471,9 @@ const Menu = () => {
                     <div className="modal-div top-border">
                       <img src={empty} className="info" alt="Info" />
                       <p>
-                        The cost is not final. Download our mobile app to see
-                        the final price and place your order. Earn loyalty
-                        points and enjoy your favorite coffee with up to 20%
-                        discount.
+                        {isLoggedIn
+                          ? "You're getting the best price! Download our app for even more rewards."
+                          : "Log in to unlock exclusive discounts up to 20% and earn loyalty points!"}
                       </p>
                     </div>
 
