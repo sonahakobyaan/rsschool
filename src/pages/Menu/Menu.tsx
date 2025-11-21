@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchProducts } from "@/api/api";
+import { fetchProducts, fetchProductById } from "@/api/api";
 import type { Product } from "@/types/product";
 import { coffee } from "@/assets/coffee/coffee.ts";
 import { tea } from "@/assets/tea/tea.ts";
@@ -34,31 +34,26 @@ const Menu = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<Category>("coffee");
   const [rotating, setRotating] = useState(false);
+  const [windowWidth, setWindowWidth] = useState<number>(typeof window !== "undefined" ? window.innerWidth : 1000);
+  const [visibleCount, setVisibleCount] = useState<number>(INITIAL_MOBILE_COUNT);
 
-  const [windowWidth, setWindowWidth] = useState<number>(
-    typeof window !== "undefined" ? window.innerWidth : 1000
-  );
-  const [visibleCount, setVisibleCount] =
-    useState<number>(INITIAL_MOBILE_COUNT);
+  // Modal state
+  const [modalOpen, setModalOpen] = useState(false);
+  const [detailedProduct, setDetailedProduct] = useState<Product | null>(null);
+  const [modalLoading, setModalLoading] = useState(false);
+  const [selectedSize, setSelectedSize] = useState<string>("s");
+  const [selectedAdditives, setSelectedAdditives] = useState<string[]>([]);
 
   useEffect(() => {
-    const handleResize = () => {
-      setWindowWidth(window.innerWidth);
-    };
-
+    const handleResize = () => setWindowWidth(window.innerWidth);
     window.addEventListener("resize", handleResize);
     handleResize();
-
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   useEffect(() => {
-    if (windowWidth < MOBILE_BREAKPOINT) {
-      setVisibleCount(INITIAL_MOBILE_COUNT);
-    } else {
-      setVisibleCount(Infinity);
-    }
-  }, [selectedCategory, windowWidth]);
+    setVisibleCount(windowWidth < MOBILE_BREAKPOINT ? INITIAL_MOBILE_COUNT : Infinity);
+  }, [windowWidth, selectedCategory]);
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -72,7 +67,6 @@ const Menu = () => {
         setLoading(false);
       }
     };
-
     loadProducts();
   }, []);
 
@@ -86,182 +80,265 @@ const Menu = () => {
   const getCategoryImage = (category: string, index: number) => {
     const imageIndex = index + 1;
     switch (category) {
-      case "coffee":
-        return coffee[imageIndex];
-      case "tea":
-        return tea[imageIndex];
-      case "dessert":
-        return dessert[imageIndex];
-      default:
-        return "";
+      case "coffee": return coffee[imageIndex];
+      case "tea": return tea[imageIndex];
+      case "dessert": return dessert[imageIndex];
+      default: return "";
     }
   };
 
-  const isMobile = windowWidth < MOBILE_BREAKPOINT;
-  const displayedProducts = isMobile
-    ? filteredProducts.slice(0, visibleCount)
-    : filteredProducts;
+  const openModal = async (product: Product, categoryIndex: number) => {
+    setModalOpen(true);
+    setModalLoading(true);
+    document.body.classList.add("no-scroll");
 
+    try {
+      const fullProduct = await fetchProductById(product.id);
+      setDetailedProduct({ ...fullProduct, categoryIndex });
+      setSelectedSize("s");
+      setSelectedAdditives([]);
+    } catch (err) {
+      console.error("Failed to load product details", err);
+      alert("Failed to load product details");
+      closeModal();
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setDetailedProduct(null);
+    setSelectedSize("s");
+    setSelectedAdditives([]);
+    document.body.classList.remove("no-scroll");
+  };
+
+  const toggleAdditive = (name: string) => {
+    setSelectedAdditives(prev =>
+      prev.includes(name)
+        ? prev.filter(a => a !== name)
+        : prev.length < 3 ? [...prev, name] : prev
+    );
+  };
+
+  const calculatePrice = () => {
+    if (!detailedProduct) return { base: 0, discount: 0 };
+
+    const sizeData = detailedProduct.sizes?.[selectedSize];
+    const basePrice = sizeData?.price || detailedProduct.price;
+    const discountPrice = sizeData?.discountPrice || detailedProduct.discountPrice || basePrice;
+
+    const additivesPrice = selectedAdditives.reduce((sum, name) => {
+      const add = detailedProduct.additives?.find(a => a.name === name);
+      return sum + (add?.price || 0);
+    }, 0);
+
+    const additivesDiscount = selectedAdditives.reduce((sum, name) => {
+      const add = detailedProduct.additives?.find(a => a.name === name);
+      return sum + (add?.discountPrice || add?.price || 0);
+    }, 0);
+
+    return {
+      base: basePrice + additivesPrice,
+      discount: discountPrice + additivesDiscount
+    };
+  };
+
+  const { base: price, discount: discountPrice } = detailedProduct ? calculatePrice() : { base: 0, discount: 0 };
+
+  const isMobile = windowWidth < MOBILE_BREAKPOINT;
+  const displayedProducts = isMobile ? filteredProducts.slice(0, visibleCount) : filteredProducts;
   const hasMore = filteredProducts.length > visibleCount;
 
   const handleLoadMore = () => {
     setRotating(true);
-setTimeout(() => {
-  setRotating(false);
-  setVisibleCount((prev) => prev + LOAD_MORE_STEP);
-}, 1000);
-
+    setTimeout(() => {
+      setRotating(false);
+      setVisibleCount(prev => Math.min(prev + LOAD_MORE_STEP, filteredProducts.length));
+    }, 1000);
   };
 
-  if (loading) {
-    return (
+  if (loading) return <div className="sections"><section className="data"><div className="loader">Loading...</div></section></div>;
+  if (error) return <div className="sections"><section className="data"><p className="error">{error}</p></section></div>;
+
+  return (
+    <>
       <div className="sections">
         <section className="top">
           <h2 className="about-h1">
-            Behind each of our cups hides an
-            <span className="accent"> amazing surprise</span>
+            Behind each of our cups hides an <span className="accent">amazing surprise</span>
           </h2>
+          <div id="categories-container" className="categories-container">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                className={`category-div ${selectedCategory === cat ? "selected" : ""}`}
+                onClick={() => setSelectedCategory(cat)}
+              >
+                <div className="img-div">
+                  <img src={categoryIcons[cat]} alt={categoryLabels[cat]} />
+                </div>
+                {categoryLabels[cat]}
+              </button>
+            ))}
+          </div>
         </section>
+
         <section className="data">
-          <div className="loader" id="coffee-loader">
-            Loading...
+          <div className={!filteredProducts.length ? "error-container" : "data-container"}>
+            {!filteredProducts.length ? (
+              <p className="error">Something went wrong. Please refresh the page</p>
+            ) : (
+              <>
+                {displayedProducts.map((product, idx) => {
+                  const categoryIndex = filteredProducts
+                    .slice(0, idx + 1)
+                    .filter(p => p.category === product.category).length - 1;
+
+                  return (
+                    <div
+                      key={product.id}
+                      className="product"
+                      onClick={() => openModal(product, categoryIndex)}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <div className="item_wrapper product_img">
+                        <div
+                          className="item"
+                          style={{
+                            backgroundImage: `url(${getCategoryImage(product.category, categoryIndex)})`,
+                            backgroundSize: "cover",
+                            backgroundPosition: "center",
+                            width: "100%",
+                            height: "310px",
+                          }}
+                        />
+                      </div>
+                      <div className="item_info">
+                        <div className="item_text">
+                          <h1 className="name">{product.name}</h1>
+                          <p className="description">{product.description}</p>
+                        </div>
+                        <div className="item_price">
+                          ${product.discountPrice ? product.discountPrice.toFixed(2) : product.price.toFixed(2)}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {isMobile && (hasMore || rotating) && (
+                  <button onClick={handleLoadMore} className="load-more">
+                    <svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg"
+                      className={`rotate-icon ${rotating ? "rotating" : ""}`}>
+                      <rect x="0.5" y="0.5" width="59" height="59" rx="29.5" stroke="#665F55" />
+                      <path className="path" d="M39.8883 31.5C39.1645 36.3113 35.013 40 30 40C24.4772 40 20 35.5228 20 30C20 24.4772 24.4772 20 30 20C34.1006 20 37.6248 22.4682 39.1679 26" stroke="#403F3D" strokeLinecap="round" strokeLinejoin="round" />
+                      <path className="path" d="M35 26H39.4C39.7314 26 40 25.7314 40 25.4V21" stroke="#403F3D" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                )}
+              </>
+            )}
           </div>
         </section>
       </div>
-    );
-  }
 
-  if (error) {
-    return (
-      <div className="sections">
-        <section className="top">
-          <h2 className="about-h1">
-            Behind each of our cups hides an
-            <span className="accent"> amazing surprise</span>
-          </h2>
-        </section>
-        <section className="data">
-          <p className="error">{error}</p>
-        </section>
-      </div>
-    );
-  }
+      {/* MODAL — 100% matches your original design */}
+      {modalOpen && (
+        <div id="product-modal" className="modal" style={{ display: "block" }}>
+          <span className="close-btn" onClick={closeModal}>×</span>
+          <div className="modal-content">
+            <div className="modal-body">
+              {modalLoading ? (
+                <div style={{ position: "absolute", inset: 0, background: "rgba(255,255,255,0.9)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10 }}>
+                  <div className="loader-spinner">Loading product...</div>
+                </div>
+              ) : detailedProduct ? (
+                <>
+                  <img
+                    id="modal-image"
+                    src={getCategoryImage(detailedProduct.category, detailedProduct.categoryIndex || 0)}
+                    alt={detailedProduct.name}
+                  />
+                  <div className="modal-content-text">
+                    <h1 id="modal-title" className="about-h1">{detailedProduct.name}</h1>
+                    <p id="modal-description" className="descp">{detailedProduct.description}</p>
 
-  return (
-    <div className="sections">
-      <section className="top">
-        <h2 className="about-h1">
-          Behind each of our cups hides an
-          <span className="accent"> amazing surprise</span>
-        </h2>
-        <div id="categories-container" className="categories-container">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              className={`category-div ${
-                selectedCategory === cat ? "selected" : ""
-              }`}
-              onClick={() => setSelectedCategory(cat)}
-            >
-              <div className="img-div">
-                <img src={categoryIcons[cat]} alt={categoryLabels[cat]} />
-              </div>
-              {categoryLabels[cat]}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      <section className="data">
-        <div
-          className={
-            !filteredProducts.length ? "error-container" : "data-container"
-          }
-        >
-          {!filteredProducts.length ? (
-            <div className="about-h1" id="failed_load">
-              <p className="error">
-                Something went wrong. Please, refresh the page
-              </p>
-            </div>
-          ) : (
-            <>
-              {displayedProducts.map((product, idx) => {
-                const categoryIndex =
-                  filteredProducts
-                    .slice(0, idx + 1)
-                    .filter((p) => p.category === product.category).length - 1;
-
-                return (
-                  <div key={product.id} className="product">
-                    <div className="item_wrapper product_img">
-                      <div
-                        className="item"
-                        style={{
-                          backgroundImage: `url(${getCategoryImage(
-                            product.category,
-                            categoryIndex
-                          )})`,
-                          backgroundSize: "cover",
-                          backgroundPosition: "center",
-                          width: "100%",
-                          height: "310px",
-                        }}
-                      ></div>
-                    </div>
-                    <div className="item_info">
-                      <div className="item_text">
-                        <h1 className="name">{product.name}</h1>
-                        <p className="description">{product.description}</p>
-                      </div>
-                      <div className="item_price">
-                        ${product.price.toFixed(2)}
+                    {/* SIZES — Always show all 5 */}
+                    <div id="size">
+                      <p className="descp">Size</p>
+                      <div id="sizes">
+                        {(["s", "m", "l", "xl", "xxl"] as const).map((key) => {
+                          const size = detailedProduct.sizes?.[key];
+                          const isAvailable = !!size;
+                          return (
+                            <button
+                              key={key}
+                              className={`modal-size-btn ${selectedSize === key ? "selected" : ""} ${!isAvailable ? "disabled" : ""}`}
+                              onClick={() => isAvailable && setSelectedSize(key)}
+                              disabled={!isAvailable}
+                            >
+                              <div className="modal-size-bg">{key.toUpperCase()}</div>
+                              <span className="size-text">{size?.size || "—"}</span>
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
+
+                    {/* ADDITIVES */}
+                    <div id="additive">
+                      <p className="descp">Additives</p>
+                      <div id="additives">
+                        {detailedProduct.additives?.map((add, i) => (
+                          <button
+                            key={i}
+                            className={`modal-size-btn additive-btn ${selectedAdditives.includes(add.name) ? "selected" : ""}`}
+                            onClick={() => toggleAdditive(add.name)}
+                            disabled={selectedAdditives.length >= 3 && !selectedAdditives.includes(add.name)}
+                          >
+                            <div className="modal-size-bg">{i + 1}</div>
+                            <span className="size-text">{add.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* PRICE */}
+                    <div className="modal-div">
+                      <h3 className="about-h1 modal-price-h1">Total:</h3>
+                      <div className="price-container">
+                        <h3 id="modal-price" className={discountPrice < price ? "horisontal-line" : ""}>
+                          ${price.toFixed(2)}
+                        </h3>
+                        {discountPrice < price && (
+                          <h3 id="modal-discount">${discountPrice.toFixed(2)}</h3>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="modal-div top-border">
+                      <img src="./assets/icons/info-empty.svg" className="info" alt="Info" />
+                      <p>
+                        The cost is not final. Download our mobile app to see the final price and place your order.
+                        Earn loyalty points and enjoy your favorite coffee with up to 20% discount.
+                      </p>
+                    </div>
+
+                    <button className="modal-btn" onClick={closeModal}>
+                      Close
+                    </button>
                   </div>
-                );
-              })}
-
-              {isMobile && (hasMore || rotating) && (
-                <button onClick={handleLoadMore} className="load-more">
-                  <svg
-                    width="60"
-                    height="60"
-                    viewBox="0 0 60 60"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    className={`rotate-icon ${rotating ? "rotating" : ""}`}
-                  >
-                    <rect
-                      x="0.5"
-                      y="0.5"
-                      width="59"
-                      height="59"
-                      rx="29.5"
-                      stroke="#665F55"
-                    ></rect>
-                    <path
-                      className="path"
-                      d="M39.8883 31.5C39.1645 36.3113 35.013 40 30 40C24.4772 40 20 35.5228 20 30C20 24.4772 24.4772 20 30 20C34.1006 20 37.6248 22.4682 39.1679 26"
-                      stroke="#403F3D"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    ></path>
-                    <path
-                      className="path"
-                      d="M35 26H39.4C39.7314 26 40 25.7314 40 25.4V21"
-                      stroke="#403F3D"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    ></path>
-                  </svg>
-                </button>
+                </>
+              ) : (
+                <p className="error">Product not found</p>
               )}
-            </>
-          )}
+            </div>
+          </div>
         </div>
-      </section>
-    </div>
+      )}
+    </>
   );
 };
 
