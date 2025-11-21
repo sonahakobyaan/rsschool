@@ -1,54 +1,32 @@
-import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { api } from "@/api/api";
 import { message } from "antd";
-import { BASE_URL } from "@/api/api";
 
 const LogIn = () => {
   const navigate = useNavigate();
   const [login, setLogin] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [isDisabled, setIsDisabled] = useState(true);
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    setIsDisabled(!(login.trim() && password.trim()));
-  }, [login, password]);
+  const isDisabled = !login.trim() || !password || isLoading;
 
-  const handleSignIn = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    setError("");
+  const handleSignIn = async (e: React.FormEvent) => {
+    const result = await api.login({ login: login.trim(), password });
+    e.preventDefault();
     setIsLoading(true);
 
-    try {
-      const response = await fetch(`${BASE_URL}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ login, password }),
-      });
-
-      const result = await response.json();
-
-      if (response.status === 201) {
-        localStorage.setItem("access_token", result.data.access_token);
-        localStorage.setItem("user", JSON.stringify(result.data.user));
-        message.success("Login successful!");
-        navigate("/menu");
-      } else if (response.status === 401) {
-        message.error("Incorrect login or password");
-      } else {
-        message.error(result.error || "Something went wrong. Try again");
-      }
-    } catch (err: unknown) {
-      console.error("Login error:", err);
-      if (err instanceof Error) {
-        message.error(err.message);
-      } else {
-        message.error("Network error. Please try again later.");
-      }
-    } finally {
-      setIsLoading(false);
+    if (result.success) {
+      localStorage.setItem("access_token", result.data.access_token);
+      localStorage.setItem("user", JSON.stringify(result.data.user));
+      message.success("Login successful!");
+      navigate("/menu");
+    } else {
+      setError(result.error);
+      message.error(result.error);
     }
+    setIsLoading(false);
   };
 
   return (

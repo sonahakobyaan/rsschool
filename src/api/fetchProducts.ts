@@ -1,9 +1,10 @@
 import type { Product } from "@/types/product";
 import { toFloat } from "@/utils/toFloat";
+import { BASE_URL } from "@/api/constant.ts";
 
 let cachedProducts: Product[] = [];
 
-export async function fetchProducts(BASE_URL: string): Promise<Product[]> {
+export async function fetchProducts(): Promise<Product[]> {
   if (cachedProducts.length > 0) return cachedProducts;
 
   try {

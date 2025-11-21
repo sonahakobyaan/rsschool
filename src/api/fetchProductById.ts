@@ -1,12 +1,9 @@
 import type { Product, Size, Additive, RawProduct } from "@/types/product";
+import { BASE_URL } from "@/api/constant.ts";
 import { toFloat } from "@/utils/toFloat";
-
 const productDetailCache = new Map<string, Product>();
 
-export async function fetchProductById(
-  id: string | number,
-  BASE_URL: string
-): Promise<Product> {
+export async function fetchProductById(id: string | number): Promise<Product> {
   const cacheKey = id.toString();
 
   if (productDetailCache.has(cacheKey)) {

@@ -3,11 +3,12 @@ import type {
   FavoriteProductResponse,
   ApiResponse,
 } from "@/types/product";
+import { BASE_URL } from "@/api/constant.ts";
 import { toFloat } from "@/utils/toFloat";
 
 let cachedFavorites: Product[] = [];
 
-export async function fetchFavorites(BASE_URL: string): Promise<Product[]> {
+export async function fetchFavorites(): Promise<Product[]> {
   if (cachedFavorites.length > 0) {
     return cachedFavorites;
   }
