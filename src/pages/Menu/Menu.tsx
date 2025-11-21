@@ -346,13 +346,9 @@ const Menu = () => {
         </section>
       </div>
 
-      {/* MODAL — Only renders existing sizes */}
       {modalOpen && (
-        <div id="product-modal" className="modal" style={{ display: "block" }}>
-          <span className="close-btn" onClick={closeModal}>
-            ×
-          </span>
-          <div className="modal-content">
+        <div id="product-modal" className="modal" style={{ display: "block" }} onClick={closeModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-body">
               {modalLoading ? (
                 <div
