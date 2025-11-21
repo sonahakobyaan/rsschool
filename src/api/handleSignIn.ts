@@ -1,6 +1,6 @@
 import type { LoginResult, LoginSuccessResponse } from "@/types/user";
 import { BASE_URL } from "@/api/constant.ts";
-export async function login(credentials: {
+export async function handleSignIn(credentials: {
   login: string;
   password: string;
 }): Promise<LoginResult> {

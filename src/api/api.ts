@@ -1,15 +1,13 @@
 import { fetchProductById } from "@/api/fetchProductById";
 import { fetchFavorites } from "@/api/fetchFavorites";
 import { fetchProducts } from "@/api/fetchProducts";
-import { login } from "@/api/handleSignIn";
-
-export type ApiConfig = {
-  baseUrl?: string;
-};
+import { handleSignIn } from "@/api/handleSignIn";
+import { handleRegister } from "@/api/handleRegister";
 
 export const api = {
-  fetchProducts,
   fetchProductById,
+  handleRegister,
   fetchFavorites,
-  login,
+  fetchProducts,
+  handleSignIn,
 };

@@ -14,7 +14,7 @@ const LogIn = () => {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    const result = await api.login({ login: login.trim(), password });
+    const result = await api.handleSignIn({ login: login.trim(), password });
     setIsLoading(true);
     setError("");
     if (result.success) {
