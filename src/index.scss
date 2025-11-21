@@ -1061,6 +1061,11 @@ footer a {
   .load-more {
     grid-column: auto;
   }
+  .menu-right-hand{
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
 
   .menu {
     width: 30px;
