@@ -13,10 +13,10 @@ const LogIn = () => {
   const isDisabled = !login.trim() || !password || isLoading;
 
   const handleSignIn = async (e: React.FormEvent) => {
-    const result = await api.login({ login: login.trim(), password });
     e.preventDefault();
+    const result = await api.login({ login: login.trim(), password });
     setIsLoading(true);
-
+    setError("");
     if (result.success) {
       localStorage.setItem("access_token", result.data.access_token);
       localStorage.setItem("user", JSON.stringify(result.data.user));

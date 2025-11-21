@@ -1,29 +1,5 @@
+import type { LoginResult, LoginSuccessResponse } from "@/types/user";
 import { BASE_URL } from "@/api/constant.ts";
-
-export type User = {
-  id: string | number;
-  login: string;
-  city?: string;
-  createdAt?: string;
-  houseNumber?: string;
-  paymentMethod?: string;
-  street?: string;
-};
-
-export type LoginSuccessResponse = {
-  access_token: string;
-  user: User;
-};
-
-export type LoginErrorResponse = {
-  error: string;
-  message?: string;
-};
-
-export type LoginResult =
-  | { success: true; data: LoginSuccessResponse }
-  | { success: false; error: string; status: number };
-
 export async function login(credentials: {
   login: string;
   password: string;
@@ -47,7 +23,7 @@ export async function login(credentials: {
     };
   }
 
-  if (response.status === 201) {
+  if (response.ok) {
     if (
       result &&
       typeof result === "object" &&
