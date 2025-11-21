@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { message } from "antd";
 import { api } from "@/api/api";
+
 const Registration = () => {
   const navigate = useNavigate();
   const [city, setCity] = useState("");
@@ -13,6 +14,24 @@ const Registration = () => {
   const [isDisabled, setIsDisabled] = useState(true);
   const [confirmPassword, setConfirmPassword] = useState("");
   const [houseNumber, setHouseNumber] = useState<number | "">("");
+
+  const cityStreetMap: Record<string, string[]> = {
+    CityA: ["Maplewood Avenue", "Silverbrook Lane", "Pinecrest Boulevard"],
+    CityB: ["Oceanview Boulevard", "Coral Reef Drive", "Lighthouse Crescent"],
+    CityC: ["Kingsley Street", "Victoria Avenue", "Grandstone Boulevard"],
+  };
+
+  const cities = [
+    { value: "CityA", label: "Riverdale Heights" },
+    { value: "CityB", label: "Aurora Bay" },
+    { value: "CityC", label: "Oakstone City" },
+  ];
+
+  const availableStreets = city ? cityStreetMap[city] || [] : [];
+
+  useEffect(() => {
+    setStreet("");
+  }, [city]);
 
   useEffect(() => {
     const valid =
@@ -43,7 +62,7 @@ const Registration = () => {
 
     if (result.success) {
       message.success("Account created successfully!");
-      navigate("/login");
+      navigate("/hero");
     } else {
       message.error(result.error);
     }
@@ -103,47 +122,29 @@ const Registration = () => {
                 onChange={(e) => setCity(e.target.value)}
               >
                 <option value="">Select city</option>
-                <option value="CityA">Riverdale Heights</option>
-                <option value="CityB">Aurora Bay</option>
-                <option value="CityC">Oakstone City</option>
+                {cities.map((c) => (
+                  <option key={c.value} value={c.value}>
+                    {c.label}
+                  </option>
+                ))}
               </select>
             </label>
-
             <label className="label">
               Street
               <select
                 className="input-login"
                 value={street}
                 onChange={(e) => setStreet(e.target.value)}
+                disabled={!city}
               >
-                <option value="">Select street</option>
-                <option value="Maplewood Avenue" data-city="CityA">
-                  Maplewood Avenue
+                <option value="">
+                  {city ? "Select street" : "First select a city"}
                 </option>
-                <option value="Silverbrook Lane" data-city="CityA">
-                  Silverbrook Lane
-                </option>
-                <option value="Pinecrest Boulevard" data-city="CityA">
-                  Pinecrest Boulevard
-                </option>
-                <option value="Oceanview Boulevard" data-city="CityB">
-                  Oceanview Boulevard
-                </option>
-                <option value="Coral Reef Drive" data-city="CityB">
-                  Coral Reef Drive
-                </option>
-                <option value="Lighthouse Crescent" data-city="CityB">
-                  Lighthouse Crescent
-                </option>
-                <option value="Kingsley Street" data-city="CityC">
-                  Kingsley Street
-                </option>
-                <option value="Victoria Avenue" data-city="CityC">
-                  Victoria Avenue
-                </option>
-                <option value="Grandstone Boulevard" data-city="CityC">
-                  Grandstone Boulevard
-                </option>
+                {availableStreets.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
               </select>
             </label>
 
@@ -154,7 +155,9 @@ const Registration = () => {
                 min={1}
                 className="input-login"
                 value={houseNumber}
-                onChange={(e) => setHouseNumber(Number(e.target.value))}
+                onChange={(e) =>
+                  setHouseNumber(e.target.value ? Number(e.target.value) : "")
+                }
               />
             </label>
 
