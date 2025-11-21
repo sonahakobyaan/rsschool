@@ -7,6 +7,7 @@ import { dessert } from "@/assets/dessert/dessert.ts";
 import coffeImg from "../../assets/icons/coffee.png";
 import teaImg from "../../assets/icons/tea.png";
 import dessertImg from "../../assets/icons/dessert.png";
+import empty from "@/assets/icons/info-empty.svg";
 
 const categories = ["coffee", "tea", "dessert"] as const;
 type Category = (typeof categories)[number];
@@ -460,11 +461,7 @@ const Menu = () => {
                     </div>
 
                     <div className="modal-div top-border">
-                      <img
-                        src="./assets/icons/info-empty.svg"
-                        className="info"
-                        alt="Info"
-                      />
+                      <img src={empty} className="info" alt="Info" />
                       <p>
                         The cost is not final. Download our mobile app to see
                         the final price and place your order. Earn loyalty
