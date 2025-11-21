@@ -1057,6 +1057,23 @@ footer a {
   transform: rotate(-45deg) translate(-1px, -3px);
 }
 
+.auth-section {
+  display: flex;
+  justify-content: end;
+}
+
+.username-btn {
+  width: auto;
+  height: auto;
+  justify-content: end;
+}
+
+.user-dropdown {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
 @media (max-width: 768px) {
   .load-more {
     grid-column: auto;

@@ -6,18 +6,50 @@ import coffeeCupIcon from "@/assets/icons/coffee-cup.svg";
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [username, setUsername] = useState<string>("");
+
   const navRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const line1Ref = useRef<SVGPathElement>(null);
   const line2Ref = useRef<SVGPathElement>(null);
 
-  // Close mobile menu when clicking on any nav link (including anchor links)
+  // Check login status
+  useEffect(() => {
+    const checkLogin = () => {
+      const token = localStorage.getItem("access_token");
+      const userStr = localStorage.getItem("user");
+
+      if (token && userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          setIsLoggedIn(true);
+          setUsername(user.login || "User");
+        } catch {
+          setIsLoggedIn(false);
+          setUsername("");
+        }
+      } else {
+        setIsLoggedIn(false);
+        setUsername("");
+      }
+    };
+
+    checkLogin();
+    window.addEventListener("storage", checkLogin);
+
+    return () => window.removeEventListener("storage", checkLogin);
+  }, []);
+
+  // Close mobile menu on link click
   const handleNavClick = () => {
     if (window.innerWidth <= 768) {
       setIsMobileMenuOpen(false);
     }
   };
 
-  // Close menu when clicking outside
+  // Close menus when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
@@ -28,20 +60,39 @@ const Header = () => {
       ) {
         setIsMobileMenuOpen(false);
       }
+
+      if (
+        isDropdownOpen &&
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
+        setIsDropdownOpen(false);
+      }
     };
 
     document.addEventListener("click", handleClickOutside);
     return () => document.removeEventListener("click", handleClickOutside);
-  }, [isMobileMenuOpen]);
+  }, [isMobileMenuOpen, isDropdownOpen]);
 
-  // Prevent body scroll when menu is open
+  // Prevent scroll when mobile menu open
   useEffect(() => {
     if (isMobileMenuOpen) {
       document.body.classList.add("no-scroll");
     } else {
       document.body.classList.remove("no-scroll");
     }
-  }, [isMobileMenuOpen]);
+ 
+
+ }, [isMobileMenuOpen]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("user");
+    setIsLoggedIn(false);
+    setUsername("");
+    setIsDropdownOpen(false);
+    window.location.reload(); // or use router if you have one
+  };
 
   return (
     <header className="relative z-50">
@@ -72,12 +123,54 @@ const Header = () => {
           <a href="/shop" id="shop">
             <img src={shoppingBag} alt="Shopping bag" />
           </a>
+
           <a href="/menu">
             <div className="menu-container">
               <p>Menu</p>
-              <img src={coffeeCupIcon} className="menu" alt="Coffee Cup Icon" />
+              <img src={coffeeCupIcon} className="menu" alt="Menu" />
             </div>
           </a>
+
+          {/* Auth Section */}
+          <div className="auth-section" ref={dropdownRef}>
+            {isLoggedIn ? (
+              <div className="user-dropdown">
+                <button
+                  className="username-btn"
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                >
+                  <span className="username-text">{username}</span>
+                  <svg
+                    className={`dropdown-arrow ${isDropdownOpen ? "rotated" : ""}`}
+                    width="12"
+                    height="8"
+                    viewBox="0 0 12 8"
+                    fill="none"
+                  >
+                    <path
+                      d="M1 1L6 6L11 1"
+                      stroke="#403F3D"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+
+                {isDropdownOpen && (
+                  <div className="dropdown-menu">
+                    <button onClick={handleLogout} className="logout-btn">
+                      Log Out
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <a href="/" className="sign-in-btn">
+                Sign In
+              </a>
+            )}
+          </div>
         </div>
       </nav>
 
