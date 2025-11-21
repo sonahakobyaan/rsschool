@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import logo from "@/assets/icons/logo.svg";
 import shoppingBag from "@/assets/icons/shopping-bag.svg";
 import coffeeCupIcon from "@/assets/icons/coffee-cup.svg";
+import { useNavigate } from 'react-router-dom';
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -14,6 +15,9 @@ const Header = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const line1Ref = useRef<SVGPathElement>(null);
   const line2Ref = useRef<SVGPathElement>(null);
+
+    const navigate = useNavigate();
+
 
   // Check login status
   useEffect(() => {
@@ -91,12 +95,12 @@ const Header = () => {
     setIsLoggedIn(false);
     setUsername("");
     setIsDropdownOpen(false);
-    window.location.reload(); // or use router if you have one
+    navigate("/hero", { replace: true });
   };
 
   return (
     <header className="relative z-50">
-      <a href="/">
+      <a href="/hero">
         <img src={logo} className="logo" alt="Coffee House Logo" />
       </a>
 
@@ -105,16 +109,16 @@ const Header = () => {
         className={`nav-links ${isMobileMenuOpen ? "mobile-active" : ""}`}
       >
         <div className="center-links">
-          <a href="#favorite-coffee" onClick={handleNavClick}>
+          <a href="/hero#favorite-coffee" onClick={handleNavClick}>
             Favorite coffee
           </a>
-          <a href="#about" onClick={handleNavClick}>
+          <a href="/hero#about" onClick={handleNavClick}>
             About
           </a>
-          <a href="#mobile-app" onClick={handleNavClick}>
+          <a href="/hero#mobile-app" onClick={handleNavClick}>
             Mobile app
           </a>
-          <a href="#footer" onClick={handleNavClick}>
+          <a href="/hero#footer" onClick={handleNavClick}>
             Contact us
           </a>
         </div>

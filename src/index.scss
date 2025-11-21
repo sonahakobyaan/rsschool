@@ -1066,12 +1066,93 @@ footer a {
   width: auto;
   height: auto;
   justify-content: end;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: var(--background-body);
+  border: 1px solid var(--border-light);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: "Inter", sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--text-dark);
+}
+
+.username-btn:hover {
+  background-color: var(--background-container);
+  color: var(--text-light);
+  border-color: var(--background-container);
+}
+
+.username-btn .dropdown-arrow {
+  transition: transform 0.3s ease;
+}
+
+.username-btn:hover .dropdown-arrow {
+  transform: rotate(180deg);
 }
 
 .user-dropdown {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  position: relative;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: var(--background-body);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 4px 0;
+  min-width: 100px;
+  z-index: 1000;
+  margin-top: 4px;
+}
+
+.logout-btn {
+  width: 100%;
+  height: fit-content;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  text-align: left;
+  font-family: "Inter", sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--text-dark);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logout-btn:hover {
+  background-color: var(--background-container);
+  color: var(--text-light);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.logout-btn::before {
+  content: "";
+  width: 16px;
+  height: 16px;
+  background-image: url("./assets/icons/trash.svg");
+  background-size: contain;
+  background-repeat: no-repeat;
+  opacity: 0.7;
+}
+
+.logout-btn:hover::before {
+  opacity: 1;
 }
 
 @media (max-width: 768px) {
