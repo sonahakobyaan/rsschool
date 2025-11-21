@@ -34,12 +34,16 @@ const Menu = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<Category>("coffee");
   const [rotating, setRotating] = useState(false);
-  const [windowWidth, setWindowWidth] = useState<number>(typeof window !== "undefined" ? window.innerWidth : 1000);
-  const [visibleCount, setVisibleCount] = useState<number>(INITIAL_MOBILE_COUNT);
+  const [windowWidth, setWindowWidth] = useState<number>(
+    typeof window !== "undefined" ? window.innerWidth : 1000
+  );
+  const [visibleCount, setVisibleCount] =
+    useState<number>(INITIAL_MOBILE_COUNT);
 
-  // Modal state
   const [modalOpen, setModalOpen] = useState(false);
-  const [detailedProduct, setDetailedProduct] = useState<Product | null>(null);
+  const [detailedProduct, setDetailedProduct] = useState<
+    (Product & { categoryIndex?: number }) | null
+  >(null);
   const [modalLoading, setModalLoading] = useState(false);
   const [selectedSize, setSelectedSize] = useState<string>("s");
   const [selectedAdditives, setSelectedAdditives] = useState<string[]>([]);
@@ -52,7 +56,9 @@ const Menu = () => {
   }, []);
 
   useEffect(() => {
-    setVisibleCount(windowWidth < MOBILE_BREAKPOINT ? INITIAL_MOBILE_COUNT : Infinity);
+    setVisibleCount(
+      windowWidth < MOBILE_BREAKPOINT ? INITIAL_MOBILE_COUNT : Infinity
+    );
   }, [windowWidth, selectedCategory]);
 
   useEffect(() => {
@@ -80,10 +86,14 @@ const Menu = () => {
   const getCategoryImage = (category: string, index: number) => {
     const imageIndex = index + 1;
     switch (category) {
-      case "coffee": return coffee[imageIndex];
-      case "tea": return tea[imageIndex];
-      case "dessert": return dessert[imageIndex];
-      default: return "";
+      case "coffee":
+        return coffee[imageIndex];
+      case "tea":
+        return tea[imageIndex];
+      case "dessert":
+        return dessert[imageIndex];
+      default:
+        return "";
     }
   };
 
@@ -94,8 +104,14 @@ const Menu = () => {
 
     try {
       const fullProduct = await fetchProductById(product.id);
-      setDetailedProduct({ ...fullProduct, categoryIndex });
-      setSelectedSize("s");
+      const productWithIndex = { ...fullProduct, categoryIndex };
+
+      setDetailedProduct(productWithIndex);
+
+      const availableSizeKey = fullProduct.sizes
+        ? Object.keys(fullProduct.sizes)[0]
+        : "s";
+      setSelectedSize(availableSizeKey);
       setSelectedAdditives([]);
     } catch (err) {
       console.error("Failed to load product details", err);
@@ -115,10 +131,12 @@ const Menu = () => {
   };
 
   const toggleAdditive = (name: string) => {
-    setSelectedAdditives(prev =>
+    setSelectedAdditives((prev) =>
       prev.includes(name)
-        ? prev.filter(a => a !== name)
-        : prev.length < 3 ? [...prev, name] : prev
+        ? prev.filter((a) => a !== name)
+        : prev.length < 3
+        ? [...prev, name]
+        : prev
     );
   };
 
@@ -126,54 +144,98 @@ const Menu = () => {
     if (!detailedProduct) return { base: 0, discount: 0 };
 
     const sizeData = detailedProduct.sizes?.[selectedSize];
-    const basePrice = sizeData?.price || detailedProduct.price;
-    const discountPrice = sizeData?.discountPrice || detailedProduct.discountPrice || basePrice;
 
-    const additivesPrice = selectedAdditives.reduce((sum, name) => {
-      const add = detailedProduct.additives?.find(a => a.name === name);
-      return sum + (add?.price || 0);
+    // 1. Base price of selected size (fallback to root price)
+    const sizeBasePrice = sizeData?.price
+      ? parseFloat(sizeData.price)
+      : parseFloat(detailedProduct.price);
+
+    // 2. Discounted price of selected size (only if exists)
+    const sizeDiscountPrice = sizeData?.discountPrice
+      ? parseFloat(sizeData.discountPrice)
+      : null;
+
+    // 3. Calculate additives: regular total
+    const additivesBaseTotal = selectedAdditives.reduce((sum, name) => {
+      const additive = detailedProduct.additives?.find((a) => a.name === name);
+      return sum + (additive?.price ? parseFloat(additive.price) : 0);
     }, 0);
 
-    const additivesDiscount = selectedAdditives.reduce((sum, name) => {
-      const add = detailedProduct.additives?.find(a => a.name === name);
-      return sum + (add?.discountPrice || add?.price || 0);
+    // 4. Calculate additives: discounted total (fallback to regular price if no discount)
+    const additivesDiscountTotal = selectedAdditives.reduce((sum, name) => {
+      const additive = detailedProduct.additives?.find((a) => a.name === name);
+      const discounted = additive?.discountPrice
+        ? parseFloat(additive.discountPrice)
+        : additive?.price
+        ? parseFloat(additive.price)
+        : 0;
+      return sum + discounted;
     }, 0);
+
+    // 5. Final prices
+    const totalBase = sizeBasePrice + additivesBaseTotal;
+    const totalDiscount =
+      sizeDiscountPrice !== null
+        ? sizeDiscountPrice + additivesDiscountTotal
+        : totalBase; // no discount if size has no discountPrice
 
     return {
-      base: basePrice + additivesPrice,
-      discount: discountPrice + additivesDiscount
+      base: totalBase,
+      discount: totalDiscount,
     };
   };
-
-  const { base: price, discount: discountPrice } = detailedProduct ? calculatePrice() : { base: 0, discount: 0 };
+  const { base: price, discount: discountPrice } = detailedProduct
+    ? calculatePrice()
+    : { base: 0, discount: 0 };
 
   const isMobile = windowWidth < MOBILE_BREAKPOINT;
-  const displayedProducts = isMobile ? filteredProducts.slice(0, visibleCount) : filteredProducts;
+  const displayedProducts = isMobile
+    ? filteredProducts.slice(0, visibleCount)
+    : filteredProducts;
   const hasMore = filteredProducts.length > visibleCount;
 
   const handleLoadMore = () => {
     setRotating(true);
     setTimeout(() => {
       setRotating(false);
-      setVisibleCount(prev => Math.min(prev + LOAD_MORE_STEP, filteredProducts.length));
+      setVisibleCount((prev) =>
+        Math.min(prev + LOAD_MORE_STEP, filteredProducts.length)
+      );
     }, 1000);
   };
 
-  if (loading) return <div className="sections"><section className="data"><div className="loader">Loading...</div></section></div>;
-  if (error) return <div className="sections"><section className="data"><p className="error">{error}</p></section></div>;
+  if (loading)
+    return (
+      <div className="sections">
+        <section className="data">
+          <div className="loader"></div>
+        </section>
+      </div>
+    );
+  if (error)
+    return (
+      <div className="sections">
+        <section className="data">
+          <p className="error">{error}</p>
+        </section>
+      </div>
+    );
 
   return (
     <>
       <div className="sections">
         <section className="top">
           <h2 className="about-h1">
-            Behind each of our cups hides an <span className="accent">amazing surprise</span>
+            Behind each of our cups hides an{" "}
+            <span className="accent">amazing surprise</span>
           </h2>
           <div id="categories-container" className="categories-container">
             {categories.map((cat) => (
               <button
                 key={cat}
-                className={`category-div ${selectedCategory === cat ? "selected" : ""}`}
+                className={`category-div ${
+                  selectedCategory === cat ? "selected" : ""
+                }`}
                 onClick={() => setSelectedCategory(cat)}
               >
                 <div className="img-div">
@@ -186,15 +248,23 @@ const Menu = () => {
         </section>
 
         <section className="data">
-          <div className={!filteredProducts.length ? "error-container" : "data-container"}>
+          <div
+            className={
+              !filteredProducts.length ? "error-container" : "data-container"
+            }
+          >
             {!filteredProducts.length ? (
-              <p className="error">Something went wrong. Please refresh the page</p>
+              <p className="about-h1">
+                Something went wrong. Please refresh the page
+              </p>
             ) : (
               <>
                 {displayedProducts.map((product, idx) => {
-                  const categoryIndex = filteredProducts
-                    .slice(0, idx + 1)
-                    .filter(p => p.category === product.category).length - 1;
+                  const categoryIndex =
+                    filteredProducts
+                      .slice(0, idx + 1)
+                      .filter((p) => p.category === product.category).length -
+                    1;
 
                   return (
                     <div
@@ -207,7 +277,10 @@ const Menu = () => {
                         <div
                           className="item"
                           style={{
-                            backgroundImage: `url(${getCategoryImage(product.category, categoryIndex)})`,
+                            backgroundImage: `url(${getCategoryImage(
+                              product.category,
+                              categoryIndex
+                            )})`,
                             backgroundSize: "cover",
                             backgroundPosition: "center",
                             width: "100%",
@@ -221,7 +294,10 @@ const Menu = () => {
                           <p className="description">{product.description}</p>
                         </div>
                         <div className="item_price">
-                          ${product.discountPrice ? product.discountPrice.toFixed(2) : product.price.toFixed(2)}
+                          $
+                          {product.discountPrice
+                            ? product.discountPrice.toFixed(2)
+                            : product.price.toFixed(2)}
                         </div>
                       </div>
                     </div>
@@ -230,11 +306,36 @@ const Menu = () => {
 
                 {isMobile && (hasMore || rotating) && (
                   <button onClick={handleLoadMore} className="load-more">
-                    <svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg"
-                      className={`rotate-icon ${rotating ? "rotating" : ""}`}>
-                      <rect x="0.5" y="0.5" width="59" height="59" rx="29.5" stroke="#665F55" />
-                      <path className="path" d="M39.8883 31.5C39.1645 36.3113 35.013 40 30 40C24.4772 40 20 35.5228 20 30C20 24.4772 24.4772 20 30 20C34.1006 20 37.6248 22.4682 39.1679 26" stroke="#403F3D" strokeLinecap="round" strokeLinejoin="round" />
-                      <path className="path" d="M35 26H39.4C39.7314 26 40 25.7314 40 25.4V21" stroke="#403F3D" strokeLinecap="round" strokeLinejoin="round" />
+                    <svg
+                      width="60"
+                      height="60"
+                      viewBox="0 0 60 60"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      className={`rotate-icon ${rotating ? "rotating" : ""}`}
+                    >
+                      <rect
+                        x="0.5"
+                        y="0.5"
+                        width="59"
+                        height="59"
+                        rx="29.5"
+                        stroke="#665F55"
+                      />
+                      <path
+                        className="path"
+                        d="M39.8883 31.5C39.1645 36.3113 35.013 40 30 40C24.4772 40 20 35.5228 20 30C20 24.4772 24.4772 20 30 20C34.1006 20 37.6248 22.4682 39.1679 26"
+                        stroke="#403F3D"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        className="path"
+                        d="M35 26H39.4C39.7314 26 40 25.7314 40 25.4V21"
+                        stroke="#403F3D"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
                     </svg>
                   </button>
                 )}
@@ -244,85 +345,131 @@ const Menu = () => {
         </section>
       </div>
 
-      {/* MODAL — 100% matches your original design */}
+      {/* MODAL — Only renders existing sizes */}
       {modalOpen && (
         <div id="product-modal" className="modal" style={{ display: "block" }}>
-          <span className="close-btn" onClick={closeModal}>×</span>
+          <span className="close-btn" onClick={closeModal}>
+            ×
+          </span>
           <div className="modal-content">
             <div className="modal-body">
               {modalLoading ? (
-                <div style={{ position: "absolute", inset: 0, background: "rgba(255,255,255,0.9)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10 }}>
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    background: "rgba(255,255,255,0.9)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    zIndex: 10,
+                  }}
+                >
                   <div className="loader-spinner">Loading product...</div>
                 </div>
               ) : detailedProduct ? (
                 <>
                   <img
                     id="modal-image"
-                    src={getCategoryImage(detailedProduct.category, detailedProduct.categoryIndex || 0)}
+                    src={getCategoryImage(
+                      detailedProduct.category,
+                      detailedProduct.categoryIndex || 0
+                    )}
                     alt={detailedProduct.name}
                   />
                   <div className="modal-content-text">
-                    <h1 id="modal-title" className="about-h1">{detailedProduct.name}</h1>
-                    <p id="modal-description" className="descp">{detailedProduct.description}</p>
+                    <h1 id="modal-title" className="about-h1">
+                      {detailedProduct.name}
+                    </h1>
+                    <p id="modal-description" className="descp">
+                      {detailedProduct.description}
+                    </p>
 
-                    {/* SIZES — Always show all 5 */}
-                    <div id="size">
-                      <p className="descp">Size</p>
-                      <div id="sizes">
-                        {(["s", "m", "l", "xl", "xxl"] as const).map((key) => {
-                          const size = detailedProduct.sizes?.[key];
-                          const isAvailable = !!size;
-                          return (
-                            <button
-                              key={key}
-                              className={`modal-size-btn ${selectedSize === key ? "selected" : ""} ${!isAvailable ? "disabled" : ""}`}
-                              onClick={() => isAvailable && setSelectedSize(key)}
-                              disabled={!isAvailable}
-                            >
-                              <div className="modal-size-bg">{key.toUpperCase()}</div>
-                              <span className="size-text">{size?.size || "—"}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
+                    {/* SIZES — Only render sizes that exist */}
+                    {detailedProduct.sizes &&
+                      Object.keys(detailedProduct.sizes).length > 0 && (
+                        <div id="size">
+                          <p className="descp">Size</p>
+                          <div id="sizes">
+                            {Object.entries(detailedProduct.sizes).map(
+                              ([key, size]) => (
+                                <button
+                                  key={key}
+                                  className={`modal-size-btn ${
+                                    selectedSize === key ? "selected" : ""
+                                  }`}
+                                  onClick={() => setSelectedSize(key)}
+                                >
+                                  <div className="modal-size-bg">
+                                    {key.toUpperCase()}
+                                  </div>
+                                  <span className="size-text">{size.size}</span>
+                                </button>
+                              )
+                            )}
+                          </div>
+                        </div>
+                      )}
 
                     {/* ADDITIVES */}
-                    <div id="additive">
-                      <p className="descp">Additives</p>
-                      <div id="additives">
-                        {detailedProduct.additives?.map((add, i) => (
-                          <button
-                            key={i}
-                            className={`modal-size-btn additive-btn ${selectedAdditives.includes(add.name) ? "selected" : ""}`}
-                            onClick={() => toggleAdditive(add.name)}
-                            disabled={selectedAdditives.length >= 3 && !selectedAdditives.includes(add.name)}
-                          >
-                            <div className="modal-size-bg">{i + 1}</div>
-                            <span className="size-text">{add.name}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
+                    {detailedProduct.additives &&
+                      detailedProduct.additives.length > 0 && (
+                        <div id="additive">
+                          <p className="descp">Additives</p>
+                          <div id="additives">
+                            {detailedProduct.additives.map((add, i) => (
+                              <button
+                                key={i}
+                                className={`modal-size-btn additive-btn ${
+                                  selectedAdditives.includes(add.name)
+                                    ? "selected"
+                                    : ""
+                                }`}
+                                onClick={() => toggleAdditive(add.name)}
+                                disabled={
+                                  selectedAdditives.length >= 3 &&
+                                  !selectedAdditives.includes(add.name)
+                                }
+                              >
+                                <div className="modal-size-bg">{i + 1}</div>
+                                <span className="size-text">{add.name}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
 
                     {/* PRICE */}
                     <div className="modal-div">
                       <h3 className="about-h1 modal-price-h1">Total:</h3>
                       <div className="price-container">
-                        <h3 id="modal-price" className={discountPrice < price ? "horisontal-line" : ""}>
+                        <h3
+                          id="modal-price"
+                          className={
+                            discountPrice < price ? "horisontal-line" : ""
+                          }
+                        >
                           ${price.toFixed(2)}
                         </h3>
                         {discountPrice < price && (
-                          <h3 id="modal-discount">${discountPrice.toFixed(2)}</h3>
+                          <h3 id="modal-discount">
+                            ${discountPrice.toFixed(2)}
+                          </h3>
                         )}
                       </div>
                     </div>
 
                     <div className="modal-div top-border">
-                      <img src="./assets/icons/info-empty.svg" className="info" alt="Info" />
+                      <img
+                        src="./assets/icons/info-empty.svg"
+                        className="info"
+                        alt="Info"
+                      />
                       <p>
-                        The cost is not final. Download our mobile app to see the final price and place your order.
-                        Earn loyalty points and enjoy your favorite coffee with up to 20% discount.
+                        The cost is not final. Download our mobile app to see
+                        the final price and place your order. Earn loyalty
+                        points and enjoy your favorite coffee with up to 20%
+                        discount.
                       </p>
                     </div>
 
