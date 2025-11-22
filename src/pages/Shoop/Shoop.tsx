@@ -68,7 +68,7 @@ const Shoop = () => {
                   <p className="product-details">{item.category}</p>
                 </div>
                 <div className="product-price">
-                  ${isLoggedIn() ? item.discountPrice : item.price}
+                ${isLoggedIn() ? (item.discountPrice ?? item.price).toFixed(2) : item.price.toFixed(2)}
                 </div>
               </div>
             );

@@ -5,7 +5,7 @@ import LogIn from "./pages/Authentication/Login/LogIn";
 import Registration from "./pages/Authentication/Registration/Registration";
 import Hero from "@/pages/Hero/Hero";
 import Menu from "./pages/Menu/Menu";
-import Shop from "./pages/Shop/Shoop";
+import Shop from "./pages/Shoop/Shoop";
 
 function App() {
   return (
