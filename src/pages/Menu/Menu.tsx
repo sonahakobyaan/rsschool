@@ -8,15 +8,14 @@ import { api } from "@/api/api";
 
 import dessertImg from "../../assets/icons/dessert.png";
 import coffeImg from "../../assets/icons/coffee.png";
-import empty from "@/assets/icons/info-empty.svg";
 import teaImg from "../../assets/icons/tea.png";
 
-import { calculatePrice } from "@/pages/Menu/utils/calculatePrice.ts";
 import LoadMore from "@/pages/Menu/components/LoadMore.tsx";
 import { toFloat } from "@/utils/toFloat";
 import { isLoggedIn } from "@/utils/auth";
 
 import type { Product } from "@/types/product";
+import ProductModal from "./components/Modal";
 
 const categories = ["coffee", "tea", "dessert"] as const;
 
@@ -42,24 +41,22 @@ const Menu = () => {
   const [visibleCount, setVisibleCount] =
     useState<number>(INITIAL_MOBILE_COUNT);
   const [loading, setLoading] = useState(true);
+  const [loggedIn, setLoggedIn] = useState(false);
   const [rotating, setRotating] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalLoading, setModalLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
-  const [windowWidth, setWindowWidth] = useState<number>(
-    typeof window !== "undefined" ? window.innerWidth : 1000
-  );
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<Category>("coffee");
-
-  const [loggedIn, setLoggedIn] = useState(false);
-
-  const [modalOpen, setModalOpen] = useState(false);
   const [detailedProduct, setDetailedProduct] = useState<
     (Product & { categoryIndex?: number }) | null
   >(null);
-  const [modalLoading, setModalLoading] = useState(false);
+  const [windowWidth, setWindowWidth] = useState<number>(
+    typeof window !== "undefined" ? window.innerWidth : 1000
+  );
   const [selectedSize, setSelectedSize] = useState<string>("s");
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [selectedAdditives, setSelectedAdditives] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<Category>("coffee");
 
   useEffect(() => {
     if (isLoggedIn()) {
@@ -158,16 +155,6 @@ const Menu = () => {
         : prev
     );
   };
-
-  const priceResult = detailedProduct
-    ? calculatePrice({
-        detailedProduct,
-        selectedSize,
-        loggedIn,
-        selectedAdditives,
-      })
-    : { base: 0, discount: 0, showDiscount: false };
-  const { base: price, discount: discountPrice, showDiscount } = priceResult;
 
   const isMobile = windowWidth < MOBILE_BREAKPOINT;
   const displayedProducts = isMobile
@@ -318,140 +305,18 @@ const Menu = () => {
         </section>
       </div>
       {modalOpen && (
-        <div
-          id="product-modal"
-          className="modal"
-          style={{ display: "block" }}
-          onClick={closeModal}
-        >
-          <div
-            className={`${
-              modalLoading || !detailedProduct
-                ? "loading-content"
-                : "modal-content"
-            }`}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="modal-body">
-              {modalLoading ? (
-                <div
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    zIndex: 10,
-                    width: "100%",
-                    height: "100%",
-                  }}
-                >
-                  <div className="loader"></div>
-                </div>
-              ) : detailedProduct ? (
-                <>
-                  <img
-                    id="modal-image"
-                    src={getCategoryImage(
-                      detailedProduct.category,
-                      detailedProduct.categoryIndex || 0
-                    )}
-                    alt={detailedProduct.name}
-                  />
-                  <div className="modal-content-text">
-                    <h1 id="modal-title" className="about-h1">
-                      {detailedProduct.name}
-                    </h1>
-                    <p id="modal-description" className="descp">
-                      {detailedProduct.description}
-                    </p>
-                    {detailedProduct.sizes &&
-                      Object.keys(detailedProduct.sizes).length > 0 && (
-                        <div id="size">
-                          <p className="descp">Size</p>
-                          <div id="sizes">
-                            {Object.entries(detailedProduct.sizes).map(
-                              ([key, size]) => (
-                                <button
-                                  key={key}
-                                  className={`modal-size-btn ${
-                                    selectedSize === key ? "selected" : ""
-                                  }`}
-                                  onClick={() => setSelectedSize(key)}
-                                >
-                                  <div className="modal-size-bg">
-                                    {key.toUpperCase()}
-                                  </div>
-                                  <span className="size-text">{size.size}</span>
-                                </button>
-                              )
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    {detailedProduct.additives &&
-                      detailedProduct.additives.length > 0 && (
-                        <div id="additive">
-                          <p className="descp">Additives</p>
-                          <div id="additives">
-                            {detailedProduct.additives.map((add, i) => (
-                              <button
-                                key={i}
-                                className={`modal-size-btn additive-btn ${
-                                  selectedAdditives.includes(add.name)
-                                    ? "selected"
-                                    : ""
-                                }`}
-                                onClick={() => toggleAdditive(add.name)}
-                                disabled={
-                                  selectedAdditives.length >= 3 &&
-                                  !selectedAdditives.includes(add.name)
-                                }
-                              >
-                                <div className="modal-size-bg">{i + 1}</div>
-                                <span className="size-text">{add.name}</span>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    <div className="modal-div">
-                      <h3 className="about-h1 modal-price-h1">Total:</h3>
-                      <div className="price-container">
-                        <h3
-                          id="modal-price"
-                          className={showDiscount ? "horisontal-line" : ""}
-                        >
-                          ${price.toFixed(2)}
-                        </h3>
-                        {showDiscount && (
-                          <h3 id="modal-discount" className="discounted-price">
-                            ${discountPrice.toFixed(2)}
-                          </h3>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="modal-div top-border">
-                      <img src={empty} className="info" alt="Info" />
-                      <p>
-                        {loggedIn
-                          ? "You're getting the best price! Download our app for even more rewards."
-                          : "Log in to unlock exclusive discounts up to 20% and earn loyalty points!"}
-                      </p>
-                    </div>
-                    <button
-                      className="modal-btn"
-                      onClick={loggedIn ? closeModal : closeModal}
-                    >
-                      {loggedIn ? "Add to cart" : "Close"}
-                    </button>
-                  </div>
-                </>
-              ) : null}
-            </div>
-          </div>
-        </div>
+        <ProductModal
+          open={modalOpen}
+          loading={modalLoading}
+          product={detailedProduct}
+          selectedSize={selectedSize}
+          selectedAdditives={selectedAdditives}
+          loggedIn={loggedIn}
+          onClose={closeModal}
+          onSizeChange={setSelectedSize}
+          onAdditiveToggle={toggleAdditive}
+          getCategoryImage={getCategoryImage}
+        />
       )}
     </>
   );

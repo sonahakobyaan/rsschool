@@ -7,6 +7,7 @@ type ProductPrice = {
   selectedSize: string;
   loggedIn: boolean;
 };
+
 export const calculatePrice = ({
   selectedAdditives,
   detailedProduct,
@@ -27,35 +28,30 @@ export const calculatePrice = ({
       ? toFloat(sizeData.discountPrice)
       : null;
 
-  const additivesBaseTotal = selectedAdditives.reduce((sum, name) => {
-    const additive = detailedProduct.additives?.find((a) => a.name === name);
-    return sum + (additive?.price ? toFloat(additive.price) : 0);
-  }, 0);
+  const finalSizePrice = sizeDiscountPrice ?? sizeBasePrice;
 
-  const additivesDiscountTotal = selectedAdditives.reduce((sum, name) => {
+  const additivesTotal = selectedAdditives.reduce((sum, name) => {
     const additive = detailedProduct.additives?.find((a) => a.name === name);
-    if (!shouldApplyDiscount) {
-      return sum + (additive?.price ? toFloat(additive.price) : 0);
+    if (!additive) return sum;
+
+    const regularPrice = additive.price ? toFloat(additive.price) : 0;
+
+    if (shouldApplyDiscount && additive.discountPrice) {
+      return sum + toFloat(additive.discountPrice);
     }
-    return (
-      sum +
-      (additive?.discountPrice
-        ? toFloat(additive.discountPrice)
-        : additive?.price
-        ? toFloat(additive.price)
-        : 0)
-    );
+
+    return sum + regularPrice;
   }, 0);
 
-  const totalBase = sizeBasePrice + additivesBaseTotal;
-  const totalDiscount =
-    sizeDiscountPrice !== null
-      ? sizeDiscountPrice + additivesDiscountTotal
-      : totalBase;
+  const totalBase = sizeBasePrice + additivesTotal;
+  const totalWithPossibleDiscount = finalSizePrice + additivesTotal;
+
+  const showDiscount =
+    shouldApplyDiscount && totalWithPossibleDiscount < totalBase;
 
   return {
     base: totalBase,
-    discount: totalDiscount,
-    showDiscount: shouldApplyDiscount && totalDiscount < totalBase,
+    discount: showDiscount ? totalWithPossibleDiscount : totalBase,
+    showDiscount,
   };
 };
