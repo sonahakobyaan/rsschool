@@ -7,8 +7,11 @@ import dessertImg from "../../assets/icons/dessert.png";
 import coffeImg from "../../assets/icons/coffee.png";
 import teaImg from "../../assets/icons/tea.png";
 import empty from "@/assets/icons/info-empty.svg";
-
+import { calculatePrice } from "@/pages/Menu/utils/calculatePrice.ts";
+import { isLoggedIn } from "@/utils/auth";
 import type { Product } from "@/types/product";
+import LoadMore from "@/pages/Menu/components/LoadMore.tsx";
+import { toFloat } from "@/utils/toFloat";
 import { message } from "antd";
 
 const categories = ["coffee", "tea", "dessert"] as const;
@@ -32,20 +35,19 @@ const MOBILE_BREAKPOINT = 768;
 const LOAD_MORE_STEP = 4;
 
 const Menu = () => {
+  const [visibleCount, setVisibleCount] =
+    useState<number>(INITIAL_MOBILE_COUNT);
   const [loading, setLoading] = useState(true);
   const [rotating, setRotating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<Category>("coffee");
   const [windowWidth, setWindowWidth] = useState<number>(
     typeof window !== "undefined" ? window.innerWidth : 1000
   );
-  const [visibleCount, setVisibleCount] =
-    useState<number>(INITIAL_MOBILE_COUNT);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<Category>("coffee");
 
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [loggedIn, setLoggedIn] = useState(false);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [detailedProduct, setDetailedProduct] = useState<
@@ -56,28 +58,9 @@ const Menu = () => {
   const [selectedAdditives, setSelectedAdditives] = useState<string[]>([]);
 
   useEffect(() => {
-    const checkLoginStatus = () => {
-      const token = localStorage.getItem("access_token");
-      const user = localStorage.getItem("user");
-
-      if (token && user) {
-        try {
-          const parsedUser = JSON.parse(user);
-          setIsLoggedIn(true);
-          setCurrentUser(parsedUser);
-        } catch (e) {
-          setIsLoggedIn(false);
-          setCurrentUser(null);
-        }
-      } else {
-        setIsLoggedIn(false);
-        setCurrentUser(null);
-      }
-    };
-
-    checkLoginStatus();
-    window.addEventListener("storage", checkLoginStatus);
-    return () => window.removeEventListener("storage", checkLoginStatus);
+    if (isLoggedIn()) {
+      setLoggedIn(true);
+    }
   }, []);
 
   useEffect(() => {
@@ -144,7 +127,7 @@ const Menu = () => {
         : "s";
       setSelectedSize(availableSizeKey);
       setSelectedAdditives([]);
-    } catch (err) {
+    } catch {
       message.error("Product not found");
       closeModal();
     } finally {
@@ -172,56 +155,13 @@ const Menu = () => {
     );
   };
 
-  const calculatePrice = () => {
-    if (!detailedProduct) return { base: 0, discount: 0, showDiscount: false };
-
-    const sizeData = detailedProduct.sizes?.[selectedSize];
-    const sizeBasePrice = sizeData?.price
-      ? parseFloat(sizeData.price)
-      : parseFloat(detailedProduct.price);
-
-    const shouldApplyDiscount = isLoggedIn;
-
-    const sizeDiscountPrice =
-      shouldApplyDiscount && sizeData?.discountPrice
-        ? parseFloat(sizeData.discountPrice)
-        : null;
-
-    const additivesBaseTotal = selectedAdditives.reduce((sum, name) => {
-      const additive = detailedProduct.additives?.find((a) => a.name === name);
-      return sum + (additive?.price ? parseFloat(additive.price) : 0);
-    }, 0);
-
-    const additivesDiscountTotal = selectedAdditives.reduce((sum, name) => {
-      const additive = detailedProduct.additives?.find((a) => a.name === name);
-      if (!shouldApplyDiscount) {
-        return sum + (additive?.price ? parseFloat(additive.price) : 0);
-      }
-      return (
-        sum +
-        (additive?.discountPrice
-          ? parseFloat(additive.discountPrice)
-          : additive?.price
-          ? parseFloat(additive.price)
-          : 0)
-      );
-    }, 0);
-
-    const totalBase = sizeBasePrice + additivesBaseTotal;
-    const totalDiscount =
-      sizeDiscountPrice !== null
-        ? sizeDiscountPrice + additivesDiscountTotal
-        : totalBase;
-
-    return {
-      base: totalBase,
-      discount: totalDiscount,
-      showDiscount: shouldApplyDiscount && totalDiscount < totalBase,
-    };
-  };
-
   const priceResult = detailedProduct
-    ? calculatePrice()
+    ? calculatePrice({
+        detailedProduct,
+        selectedSize,
+        loggedIn,
+        selectedAdditives,
+      })
     : { base: 0, discount: 0, showDiscount: false };
   const { base: price, discount: discountPrice, showDiscount } = priceResult;
 
@@ -243,9 +183,9 @@ const Menu = () => {
 
   const getDisplayPrice = (product: Product) => {
     if (
-      isLoggedIn &&
+      loggedIn &&
       product.discountPrice &&
-      parseFloat(product.discountPrice) < parseFloat(product.price)
+      toFloat(product.discountPrice) < toFloat(product.price)
     ) {
       return { price: product.discountPrice, original: product.price };
     }
@@ -349,15 +289,15 @@ const Menu = () => {
                           {original ? (
                             <>
                               <span className="horisontal-line">
-                                ${parseFloat(original).toFixed(2)}
+                                ${toFloat(original).toFixed(2)}
                               </span>{" "}
                               <strong>
-                                ${parseFloat(displayPrice).toFixed(2)}
+                                ${toFloat(displayPrice).toFixed(2)}
                               </strong>
                             </>
                           ) : (
                             <strong>
-                              ${parseFloat(displayPrice).toFixed(2)}
+                              ${toFloat(displayPrice).toFixed(2)}
                             </strong>
                           )}
                         </div>
@@ -365,40 +305,9 @@ const Menu = () => {
                     </div>
                   );
                 })}
-
                 {isMobile && (hasMore || rotating) && (
                   <button onClick={handleLoadMore} className="load-more">
-                    <svg
-                      width="60"
-                      height="60"
-                      viewBox="0 0 60 60"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                      className={`rotate-icon ${rotating ? "rotating" : ""}`}
-                    >
-                      <rect
-                        x="0.5"
-                        y="0.5"
-                        width="59"
-                        height="59"
-                        rx="29.5"
-                        stroke="#665F55"
-                      />
-                      <path
-                        className="path"
-                        d="M39.8883 31.5C39.1645 36.3113 35.013 40 30 40C24.4772 40 20 35.5228 20 30C20 24.4772 24.4772 20 30 20C34.1006 20 37.6248 22.4682 39.1679 26"
-                        stroke="#403F3D"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      <path
-                        className="path"
-                        d="M35 26H39.4C39.7314 26 40 25.7314 40 25.4V21"
-                        stroke="#403F3D"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
+                    <LoadMore rotating={rotating} />
                   </button>
                 )}
               </>
@@ -406,7 +315,6 @@ const Menu = () => {
           </div>
         </section>
       </div>
-
       {modalOpen && (
         <div
           id="product-modal"
@@ -455,8 +363,6 @@ const Menu = () => {
                     <p id="modal-description" className="descp">
                       {detailedProduct.description}
                     </p>
-
-                    {/* SIZES */}
                     {detailedProduct.sizes &&
                       Object.keys(detailedProduct.sizes).length > 0 && (
                         <div id="size">
@@ -481,8 +387,6 @@ const Menu = () => {
                           </div>
                         </div>
                       )}
-
-                    {/* ADDITIVES */}
                     {detailedProduct.additives &&
                       detailedProduct.additives.length > 0 && (
                         <div id="additive">
@@ -509,8 +413,6 @@ const Menu = () => {
                           </div>
                         </div>
                       )}
-
-                    {/* PRICE — Only show discount if logged in */}
                     <div className="modal-div">
                       <h3 className="about-h1 modal-price-h1">Total:</h3>
                       <div className="price-container">
@@ -531,13 +433,16 @@ const Menu = () => {
                     <div className="modal-div top-border">
                       <img src={empty} className="info" alt="Info" />
                       <p>
-                        {isLoggedIn
+                        {loggedIn
                           ? "You're getting the best price! Download our app for even more rewards."
                           : "Log in to unlock exclusive discounts up to 20% and earn loyalty points!"}
                       </p>
                     </div>
-                    <button className="modal-btn" onClick={isLoggedIn? closeModal : closeModal}>
-                      {isLoggedIn ? "Add to cart" : "Close"}
+                    <button
+                      className="modal-btn"
+                      onClick={loggedIn ? closeModal : closeModal}
+                    >
+                      {loggedIn ? "Add to cart" : "Close"}
                     </button>
                   </div>
                 </>
