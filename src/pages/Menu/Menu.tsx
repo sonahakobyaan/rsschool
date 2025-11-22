@@ -9,6 +9,7 @@ import teaImg from "../../assets/icons/tea.png";
 import empty from "@/assets/icons/info-empty.svg";
 
 import type { Product } from "@/types/product";
+import { message } from "antd";
 
 const categories = ["coffee", "tea", "dessert"] as const;
 
@@ -144,11 +145,12 @@ const Menu = () => {
       setSelectedSize(availableSizeKey);
       setSelectedAdditives([]);
     } catch (err) {
-      console.error("Failed to load product details", err);
-      alert("Failed to load product details");
+      message.error("Product not found");
       closeModal();
     } finally {
-      setModalLoading(false);
+      setTimeout(() => {
+        setModalLoading(false);
+      }, 100);
     }
   };
 
@@ -412,21 +414,25 @@ const Menu = () => {
           style={{ display: "block" }}
           onClick={closeModal}
         >
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div
+            className={`${modalLoading || !detailedProduct ?"loading-content" : "modal-content"}`}
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="modal-body">
               {modalLoading ? (
                 <div
                   style={{
                     position: "absolute",
                     inset: 0,
-                    background: "rgba(255,255,255,0.9)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     zIndex: 10,
+                    width: "100%",
+                    height: "100%",
                   }}
                 >
-                  <div className="loader-spinner"></div>
+                  <div className="loader"></div>
                 </div>
               ) : detailedProduct ? (
                 <>
@@ -532,9 +538,7 @@ const Menu = () => {
                     </button>
                   </div>
                 </>
-              ) : (
-                <p className="error">Product not found</p>
-              )}
+              ) : null}
             </div>
           </div>
         </div>
