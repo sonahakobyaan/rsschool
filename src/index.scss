@@ -1181,6 +1181,13 @@ footer a {
   opacity: 0.7;
 }
 
+.center{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
 .logout-btn:hover::before {
   opacity: 1;
 }

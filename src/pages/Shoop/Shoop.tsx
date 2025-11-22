@@ -40,43 +40,48 @@ const Shoop = () => {
         <h2 className="about-h1">Cart</h2>
 
         {error && <p className="text-red-500">{error}</p>}
+        {!isLoggedIn() && <p className="about-h1 center">Sign In to see you cart.</p>}
+        {isLoggedIn() && (
+          <div id="cart-items">
+            {favorites.length === 0 && <p>Your cart is empty</p>}
 
-        <div id="cart-items">
-          {favorites.length === 0 && <p>Your cart is empty</p>}
-
-          {favorites.map((item) => {
-            const index = Number(item.id) - 1;
-            return (
-              <div
-                className="cart-row"
-                key={item.id}
-                data-price={item.discountPrice || item.price}
-              >
-                <button
-                  className="delete-btn"
-                  onClick={() => handleDelete(item.id)}
+            {favorites.map((item) => {
+              const index = Number(item.id) - 1;
+              return (
+                <div
+                  className="cart-row"
+                  key={item.id}
+                  data-price={item.discountPrice || item.price}
                 >
-                  <img src={Delete} alt="Delete" />
-                </button>
-                <img
-                  src={getCategoryImage(item.category, index)}
-                  alt={item.name}
-                  className="product-image"
-                />
-                <div className="product-info">
-                  <p className="product-name">{item.name}</p>
-                  <p className="product-details">{item.category}</p>
+                  <button
+                    className="delete-btn"
+                    onClick={() => handleDelete(item.id)}
+                  >
+                    <img src={Delete} alt="Delete" />
+                  </button>
+                  <img
+                    src={getCategoryImage(item.category, index)}
+                    alt={item.name}
+                    className="product-image"
+                  />
+                  <div className="product-info">
+                    <p className="product-name">{item.name}</p>
+                    <p className="product-details">{item.category}</p>
+                  </div>
+                  <div className="product-price">
+                    $
+                    {isLoggedIn()
+                      ? (item.discountPrice ?? item.price).toFixed(2)
+                      : item.price.toFixed(2)}
+                  </div>
                 </div>
-                <div className="product-price">
-                ${isLoggedIn() ? (item.discountPrice ?? item.price).toFixed(2) : item.price.toFixed(2)}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
 
         <h3 id="total-price" className="about-h1">
-          Total: ${totalPrice.toFixed(2)}
+          Total: ${isLoggedIn() ? totalPrice.toFixed(2): 0}
         </h3>
       </div>
     </div>
