@@ -1,6 +1,7 @@
 import type { Product } from "@/types/product";
 import { toFloat } from "@/utils/toFloat";
 import { BASE_URL } from "@/api/constant.ts";
+import { keepCache } from "@/utils/cache.ts";
 
 let cachedProducts: Product[] = [];
 
@@ -11,18 +12,17 @@ export async function fetchProducts(): Promise<Product[]> {
     const response = await fetch(`${BASE_URL}/products`);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-    const { data } = (await response.json()) as {
-      data: Array<{
-        id: number | string;
-        name: string;
-        description: string;
-        price: number | string;
-        discountPrice?: number | string | null;
-        category: string;
-      }>;
-    };
+    const result = await response.json();
+    const data: Array<{
+      id: number | string;
+      name: string;
+      description: string;
+      price: number | string;
+      discountPrice?: number | string | null;
+      category: string;
+    }> = result.data;
 
-    cachedProducts = data.map((item) => ({
+    const products: Product[] = data.map((item) => ({
       id: String(item.id),
       name: item.name,
       description: item.description,
@@ -33,7 +33,9 @@ export async function fetchProducts(): Promise<Product[]> {
       isFavorite: false,
     }));
 
-    return cachedProducts;
+    if (keepCache()) cachedProducts = products;
+
+    return products;
   } catch (error) {
     console.error("Error fetching products:", error);
     return [];

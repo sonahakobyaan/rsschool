@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react";
-import { message } from "antd";
 import { api } from "@/api/api";
+import { FloatButton, Popconfirm, message } from "antd";
+import { DollarOutlined } from "@ant-design/icons";
 
 import getCategoryImage from "@/pages/Menu/utils/getCategoryImage.ts";
 import LoadMore from "@/pages/Menu/components/LoadMore.tsx";
 import { toFloat } from "@/utils/toFloat";
 import { isLoggedIn } from "@/utils/auth";
+import { handleMobile } from "@/utils/mobile";
 
 import type { Product } from "@/types/product";
 import ProductModal from "./components/Modal";
-import { handleMobile } from "@/utils/mobile";
 
 import {
   MOBILE_COUNT,
@@ -31,7 +32,7 @@ const Menu = () => {
   const [error, setError] = useState<string | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [detailedProduct, setDetailedProduct] = useState<
-  (Product & { categoryIndex?: number }) | null
+    (Product & { categoryIndex?: number }) | null
   >(null);
   const [windowWidth, setWindowWidth] = useState<number>(
     typeof window !== "undefined" ? window.innerWidth : 1000
@@ -41,12 +42,11 @@ const Menu = () => {
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [selectedAdditives, setSelectedAdditives] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<Category>("coffee");
+
   const isMobile = handleMobile();
-  
+
   useEffect(() => {
-    if (isLoggedIn()) {
-      setLoggedIn(true);
-    }
+    setLoggedIn(isLoggedIn());
   }, []);
 
   useEffect(() => {
@@ -58,7 +58,7 @@ const Menu = () => {
 
   useEffect(() => {
     setVisibleCount(isMobile ? MOBILE_COUNT : Infinity);
-  }, [windowWidth, isMobile]);
+  }, [isMobile, windowWidth]);
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -79,8 +79,9 @@ const Menu = () => {
     if (products.length > 0) {
       const filtered = products.filter((p) => p.category === selectedCategory);
       setFilteredProducts(filtered);
+      setVisibleCount(isMobile ? MOBILE_COUNT : Infinity); // Reset on category change
     }
-  }, [selectedCategory, products]);
+  }, [selectedCategory, products, isMobile]);
 
   const openModal = async (product: Product, categoryIndex: number) => {
     setModalOpen(true);
@@ -89,21 +90,18 @@ const Menu = () => {
 
     try {
       const fullProduct = await api.fetchProductById(product.id);
-      const productWithIndex = { ...fullProduct, categoryIndex };
-      setDetailedProduct(productWithIndex);
+      setDetailedProduct({ ...fullProduct, categoryIndex });
 
-      const availableSizeKey = fullProduct.sizes
+      const firstSize = fullProduct.sizes
         ? Object.keys(fullProduct.sizes)[0]
         : "s";
-      setSelectedSize(availableSizeKey);
+      setSelectedSize(firstSize);
       setSelectedAdditives([]);
     } catch {
       message.error("Product not found");
       closeModal();
     } finally {
-      setTimeout(() => {
-        setModalLoading(false);
-      }, 100);
+      setTimeout(() => setModalLoading(false), 100);
     }
   };
 
@@ -125,11 +123,6 @@ const Menu = () => {
     );
   };
 
-  const displayedProducts = isMobile
-    ? filteredProducts.slice(0, visibleCount)
-    : filteredProducts;
-  const hasMore = filteredProducts.length > visibleCount;
-
   const handleLoadMore = () => {
     setRotating(true);
     setTimeout(() => {
@@ -138,6 +131,16 @@ const Menu = () => {
         Math.min(prev + LOAD_MORE_STEP, filteredProducts.length)
       );
     }, 1000);
+  };
+
+  const handleCashConfirm = () => {
+    localStorage.setItem("collect_cache_confirmed", "yes");
+    message.success("Cache collected!");
+  };
+
+  const handleCashCancel = () => {
+    localStorage.removeItem("collect_cache_confirmed");
+    message.info("Cache cancelled");
   };
 
   const getDisplayPrice = (product: Product) => {
@@ -151,7 +154,12 @@ const Menu = () => {
     return { price: product.price, original: null };
   };
 
-  if (loading)
+  const displayedProducts = isMobile
+    ? filteredProducts.slice(0, visibleCount)
+    : filteredProducts;
+  const hasMore = filteredProducts.length > visibleCount;
+
+  if (loading) {
     return (
       <div className="sections">
         <section className="data">
@@ -159,8 +167,9 @@ const Menu = () => {
         </section>
       </div>
     );
+  }
 
-  if (error)
+  if (error) {
     return (
       <div className="sections">
         <section className="data">
@@ -168,6 +177,7 @@ const Menu = () => {
         </section>
       </div>
     );
+  }
 
   return (
     <>
@@ -202,9 +212,7 @@ const Menu = () => {
             }
           >
             {!filteredProducts.length ? (
-              <p className="about-h1">
-                Something went wrong. Please refresh the page
-              </p>
+              <p className="about-h1">No products in this category yet.</p>
             ) : (
               <>
                 {displayedProducts.map((product, idx) => {
@@ -262,6 +270,7 @@ const Menu = () => {
                     </div>
                   );
                 })}
+
                 {isMobile && (hasMore || rotating) && (
                   <button onClick={handleLoadMore} className="load-more">
                     <LoadMore rotating={rotating} />
@@ -272,7 +281,22 @@ const Menu = () => {
           </div>
         </section>
       </div>
-      {modalOpen && (
+      {loggedIn && (
+        <Popconfirm
+          title="Collect cash?"
+          onConfirm={handleCashConfirm}
+          onCancel={handleCashCancel}
+          okText="Yes"
+          cancelText="No"
+        >
+          <FloatButton
+            icon={<DollarOutlined />}
+            type="primary"
+            style={{ right: 24, bottom: 24 }}
+          />
+        </Popconfirm>
+      )}
+      {modalOpen && detailedProduct && (
         <ProductModal
           open={modalOpen}
           loading={modalLoading}

@@ -9,6 +9,7 @@ export const getUser = () => {
 };
 
 export const logout = () => {
+  localStorage.removeItem("collect_cache_confirmed");
   localStorage.removeItem("access_token");
   localStorage.removeItem("user");
   window.location.href = "/hero";
