@@ -8,18 +8,21 @@ import Hero from "@/pages/Hero/Hero";
 import Menu from "./pages/Menu/Menu";
 import Shop from "./pages/Shoop/Shoop";
 
-const Header = HeaderModule.default || HeaderModule.Header || (() => null);
+const Header = HeaderModule.default || (() => null);
 
 function App() {
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [theme, setTheme] = useState<"light" | "dark">(
+    (localStorage.getItem("theme") as "light" | "dark") || "light"
+  );
 
-  // On theme change, toggle dark class on body
   useEffect(() => {
     if (theme === "dark") {
       document.body.classList.add("dark");
     } else {
       document.body.classList.remove("dark");
     }
+
+    localStorage.setItem("theme", theme);
   }, [theme]);
 
   const toggleTheme = () => {
