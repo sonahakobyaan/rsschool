@@ -22,6 +22,7 @@ const LogIn = () => {
       localStorage.setItem("user", JSON.stringify(result.data.user));
       message.success("Login successful!");
       navigate("/menu");
+      window.location.reload();
     } else {
       setError(result.error);
       message.error(result.error);
