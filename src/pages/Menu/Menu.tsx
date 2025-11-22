@@ -1,11 +1,6 @@
 import { useEffect, useState } from "react";
 import { message } from "antd";
-
 import { api } from "@/api/api";
-
-import dessertImg from "../../assets/icons/dessert.png";
-import coffeImg from "../../assets/icons/coffee.png";
-import teaImg from "../../assets/icons/tea.png";
 
 import getCategoryImage from "@/pages/Menu/utils/getCategoryImage.ts";
 import LoadMore from "@/pages/Menu/components/LoadMore.tsx";
@@ -16,28 +11,18 @@ import type { Product } from "@/types/product";
 import ProductModal from "./components/Modal";
 import { handleMobile } from "@/utils/mobile";
 
-const categories = ["coffee", "tea", "dessert"] as const;
-
-type Category = (typeof categories)[number];
-
-const categoryIcons: Record<Category, string> = {
-  dessert: dessertImg,
-  coffee: coffeImg,
-  tea: teaImg,
-};
-
-const categoryLabels: Record<Category, string> = {
-  dessert: "Desserts",
-  coffee: "Coffee",
-  tea: "Tea",
-};
-
-const INITIAL_MOBILE_COUNT = 4;
-const LOAD_MORE_STEP = 4;
+import {
+  MOBILE_COUNT,
+  LOAD_MORE_STEP,
+  CATEGORIES,
+} from "@/pages/Menu/consts/consts";
+import {
+  categoryIcons,
+  categoryLabels,
+  type Category,
+} from "@/pages/Menu/utils/category.ts";
 
 const Menu = () => {
-  const [visibleCount, setVisibleCount] =
-    useState<number>(INITIAL_MOBILE_COUNT);
   const [loading, setLoading] = useState(true);
   const [loggedIn, setLoggedIn] = useState(false);
   const [rotating, setRotating] = useState(false);
@@ -46,12 +31,13 @@ const Menu = () => {
   const [error, setError] = useState<string | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [detailedProduct, setDetailedProduct] = useState<
-    (Product & { categoryIndex?: number }) | null
+  (Product & { categoryIndex?: number }) | null
   >(null);
   const [windowWidth, setWindowWidth] = useState<number>(
     typeof window !== "undefined" ? window.innerWidth : 1000
   );
   const [selectedSize, setSelectedSize] = useState<string>("s");
+  const [visibleCount, setVisibleCount] = useState(MOBILE_COUNT);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [selectedAdditives, setSelectedAdditives] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<Category>("coffee");
@@ -70,7 +56,7 @@ const Menu = () => {
   }, []);
 
   useEffect(() => {
-    setVisibleCount(isMobile ? INITIAL_MOBILE_COUNT : Infinity);
+    setVisibleCount(isMobile ? MOBILE_COUNT : Infinity);
   }, [windowWidth, isMobile]);
 
   useEffect(() => {
@@ -137,6 +123,7 @@ const Menu = () => {
         : prev
     );
   };
+
   const displayedProducts = isMobile
     ? filteredProducts.slice(0, visibleCount)
     : filteredProducts;
@@ -190,7 +177,7 @@ const Menu = () => {
             <span className="accent">amazing surprise</span>
           </h2>
           <div id="categories-container" className="categories-container">
-            {categories.map((cat) => (
+            {CATEGORIES.map((cat) => (
               <button
                 key={cat}
                 className={`category-div ${
