@@ -405,7 +405,6 @@ const Menu = () => {
         </section>
       </div>
 
-      {/* MODAL */}
       {modalOpen && (
         <div
           id="product-modal"
@@ -427,7 +426,7 @@ const Menu = () => {
                     zIndex: 10,
                   }}
                 >
-                  <div className="loader-spinner">Loading product...</div>
+                  <div className="loader-spinner"></div>
                 </div>
               ) : detailedProduct ? (
                 <>
