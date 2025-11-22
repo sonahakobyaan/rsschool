@@ -346,7 +346,7 @@ const Menu = () => {
                         <div className="item_price">
                           {original ? (
                             <>
-                              <span className="original-price">
+                              <span className="horisontal-line">
                                 ${parseFloat(original).toFixed(2)}
                               </span>{" "}
                               <strong>
