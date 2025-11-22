@@ -89,7 +89,6 @@ const Registration = () => {
                 onChange={(e) => setLogin(e.target.value)}
               />
             </label>
-
             <label className="label">
               Password
               <input
@@ -100,7 +99,6 @@ const Registration = () => {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </label>
-
             <label className="label">
               Confirm Password
               <input
@@ -112,7 +110,6 @@ const Registration = () => {
               />
             </label>
           </div>
-
           <div className="label-row second-row">
             <label className="label">
               City
@@ -147,7 +144,6 @@ const Registration = () => {
                 ))}
               </select>
             </label>
-
             <label className="label">
               House Number
               <input
@@ -160,7 +156,6 @@ const Registration = () => {
                 }
               />
             </label>
-
             <div className="payment-by-container">
               <legend>Payment By</legend>
               <div className="radio-container">
@@ -187,7 +182,6 @@ const Registration = () => {
               </div>
             </div>
           </div>
-
           <button
             type="submit"
             className="login-button"
