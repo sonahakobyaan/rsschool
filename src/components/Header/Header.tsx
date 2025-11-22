@@ -6,8 +6,13 @@ import shoppingBag from "@/assets/icons/shopping-bag.svg";
 import logo from "@/assets/icons/logo.svg";
 import Dropdown from "@/components/Header/components/Dropdown.tsx";
 import Burger from "@/components/Header/components/Burger.tsx";
+import { SunOutlined, MoonOutlined } from "@ant-design/icons";
+interface HeaderProps {
+  theme: "light" | "dark";
+  toggleTheme: () => void;
+}
 
-const Header = () => {
+const Header = ({ theme, toggleTheme }: HeaderProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [username, setUsername] = useState<string>("");
@@ -93,14 +98,17 @@ const Header = () => {
         </div>
         <div className="menu-right-hand">
           <a href="/shoop" id="shop">
-            <img src={shoppingBag} alt="Shopping bag" />
+            <img src={shoppingBag} alt="Shopping bag" className="mode" />
           </a>
           <a href="/menu">
             <div className="menu-container">
               <p>Menu</p>
-              <img src={coffeeCupIcon} className="menu" alt="Menu" />
+              <img src={coffeeCupIcon} className="menu mode" alt="Menu" />
             </div>
           </a>
+          <div className="mode" onClick={toggleTheme}>
+            {theme === "light" ? <MoonOutlined /> : <SunOutlined />}
+          </div>
           <div className="auth-section" ref={dropdownRef}>
             {loggedIn ? (
               <div className="user-dropdown">

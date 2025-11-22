@@ -5,7 +5,7 @@ import tea4 from "@/assets/tea/tea-4.svg";
 import tea5 from "@/assets/tea/tea-5.png";
 import tea6 from "@/assets/tea/tea-6.png";
 import tea7 from "@/assets/tea/tea-7.png";
-import tea8 from "@/assets/tea/tea-8.png";
+import tea8 from "@/assets/tea/tea-8.jpeg";
 import tea9 from "@/assets/tea/tea-9.png";
 import tea10 from "@/assets/tea/tea-10.png";
 

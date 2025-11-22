@@ -9,6 +9,17 @@
   --border-dark: #665f55;
 }
 
+.dark {
+  --text-dark: #e1e1e1;
+  --text-light: #403f3d;
+  --text-accent: #d9a465;
+  --background-body: #181818;
+  --background-container: #292929;
+  --background-backdrop: #000000cc;
+  --border-light: #505050;
+  --border-dark: #d9a465;
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -68,6 +79,14 @@ form {
   flex-direction: column;
   justify-content: center;
   align-items: center;
+}
+
+.mode{
+  display: flex;
+  justify-content: center;
+  align-items:center;
+  color: var(--text-dark);
+  cursor:pointer;
 }
 
 .label-container {
