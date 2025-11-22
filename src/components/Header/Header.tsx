@@ -41,7 +41,6 @@ const Header = () => {
   useEffect(() => {
     if (isLoggedIn()) {
       setLoggedIn(true);
-      console.log("ok")
       setUsername(getUser()?.login || "");
     }
   }, []);

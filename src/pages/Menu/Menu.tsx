@@ -1,18 +1,22 @@
 import { useEffect, useState } from "react";
+import { message } from "antd";
+
 import { dessert } from "@/assets/dessert/dessert.ts";
 import { coffee } from "@/assets/coffee/coffee.ts";
 import { tea } from "@/assets/tea/tea.ts";
 import { api } from "@/api/api";
+
 import dessertImg from "../../assets/icons/dessert.png";
 import coffeImg from "../../assets/icons/coffee.png";
-import teaImg from "../../assets/icons/tea.png";
 import empty from "@/assets/icons/info-empty.svg";
+import teaImg from "../../assets/icons/tea.png";
+
 import { calculatePrice } from "@/pages/Menu/utils/calculatePrice.ts";
-import { isLoggedIn } from "@/utils/auth";
-import type { Product } from "@/types/product";
 import LoadMore from "@/pages/Menu/components/LoadMore.tsx";
 import { toFloat } from "@/utils/toFloat";
-import { message } from "antd";
+import { isLoggedIn } from "@/utils/auth";
+
+import type { Product } from "@/types/product";
 
 const categories = ["coffee", "tea", "dessert"] as const;
 
@@ -296,9 +300,7 @@ const Menu = () => {
                               </strong>
                             </>
                           ) : (
-                            <strong>
-                              ${toFloat(displayPrice).toFixed(2)}
-                            </strong>
+                            <strong>${toFloat(displayPrice).toFixed(2)}</strong>
                           )}
                         </div>
                       </div>

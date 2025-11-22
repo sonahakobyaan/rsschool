@@ -19,8 +19,8 @@ const Instagram = () => {
         <path
           d="M30 34C32.2091 34 34 32.2091 34 30C34 27.7909 32.2091 26 30 26C27.7909 26 26 27.7909 26 30C26 32.2091 27.7909 34 30 34Z"
           stroke="#E1D4C9"
-          stroke-linecap="round"
-          stroke-linejoin="round"
+          strokeLinecap="round"
+          strokeLinejoin="round"
           className="color"
         />
         <path
@@ -31,8 +31,8 @@ const Instagram = () => {
         <path
           d="M35.5 24.51L35.51 24.4989"
           stroke="#E1D4C9"
-          stroke-linecap="round"
-          stroke-linejoin="round"
+          strokeLinecap="round"
+          strokeLinejoin="round"
           className="color"
         />
       </svg>

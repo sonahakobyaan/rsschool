@@ -1,7 +1,7 @@
 type LoadMoreProps = {
-  rotating: boolean;
-};
-const LoadMore = ({ rotating }: LoadMoreProps) => {
+    rotating: boolean;
+  };
+const LoadMore = ({rotating}:LoadMoreProps) => {
   return (
     <svg
       width="60"
