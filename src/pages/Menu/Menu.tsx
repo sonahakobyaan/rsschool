@@ -79,7 +79,7 @@ const Menu = () => {
     if (products.length > 0) {
       const filtered = products.filter((p) => p.category === selectedCategory);
       setFilteredProducts(filtered);
-      setVisibleCount(isMobile ? MOBILE_COUNT : Infinity); // Reset on category change
+      setVisibleCount(isMobile ? MOBILE_COUNT : Infinity);
     }
   }, [selectedCategory, products, isMobile]);
 
