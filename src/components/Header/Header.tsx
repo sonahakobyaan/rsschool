@@ -1,59 +1,40 @@
-// components/Header.tsx
 import { useEffect, useRef, useState } from "react";
-import logo from "@/assets/icons/logo.svg";
-import shoppingBag from "@/assets/icons/shopping-bag.svg";
+import { isLoggedIn, getUser, logout } from "@/utils/auth";
 import coffeeCupIcon from "@/assets/icons/coffee-cup.svg";
-import { useNavigate } from 'react-router-dom';
+import shoppingBag from "@/assets/icons/shopping-bag.svg";
+import logo from "@/assets/icons/logo.svg";
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState<string>("");
+  const [loggedIn, setLoggedIn] = useState(false);
 
   const navRef = useRef<HTMLDivElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const line1Ref = useRef<SVGPathElement>(null);
   const line2Ref = useRef<SVGPathElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-    const navigate = useNavigate();
-
-
-  // Check login status
   useEffect(() => {
-    const checkLogin = () => {
-      const token = localStorage.getItem("access_token");
-      const userStr = localStorage.getItem("user");
-
-      if (token && userStr) {
-        try {
-          const user = JSON.parse(userStr);
-          setIsLoggedIn(true);
-          setUsername(user.login || "User");
-        } catch {
-          setIsLoggedIn(false);
-          setUsername("");
-        }
-      } else {
-        setIsLoggedIn(false);
-        setUsername("");
-      }
-    };
-
-    checkLogin();
-    window.addEventListener("storage", checkLogin);
-
-    return () => window.removeEventListener("storage", checkLogin);
+    if (isLoggedIn()) {
+      setLoggedIn(true);
+      setUsername(getUser()?.login || "");
+    }
   }, []);
 
-  // Close mobile menu on link click
+  const handleLogout = () => {
+    logout();
+    setUsername("");
+    setLoggedIn(false);
+    setIsDropdownOpen(false);
+  };
+
   const handleNavClick = () => {
     if (window.innerWidth <= 768) {
       setIsMobileMenuOpen(false);
     }
   };
 
-  // Close menus when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
@@ -64,7 +45,6 @@ const Header = () => {
       ) {
         setIsMobileMenuOpen(false);
       }
-
       if (
         isDropdownOpen &&
         dropdownRef.current &&
@@ -73,30 +53,17 @@ const Header = () => {
         setIsDropdownOpen(false);
       }
     };
-
     document.addEventListener("click", handleClickOutside);
     return () => document.removeEventListener("click", handleClickOutside);
   }, [isMobileMenuOpen, isDropdownOpen]);
 
-  // Prevent scroll when mobile menu open
   useEffect(() => {
     if (isMobileMenuOpen) {
       document.body.classList.add("no-scroll");
     } else {
       document.body.classList.remove("no-scroll");
     }
- 
-
- }, [isMobileMenuOpen]);
-
-  const handleLogout = () => {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("user");
-    setIsLoggedIn(false);
-    setUsername("");
-    setIsDropdownOpen(false);
-    navigate("/hero", { replace: true });
-  };
+  }, [isMobileMenuOpen]);
 
   return (
     <header className="relative z-50">
@@ -135,9 +102,8 @@ const Header = () => {
             </div>
           </a>
 
-          {/* Auth Section */}
           <div className="auth-section" ref={dropdownRef}>
-            {isLoggedIn ? (
+            {loggedIn ? (
               <div className="user-dropdown">
                 <button
                   className="username-btn"
@@ -145,7 +111,9 @@ const Header = () => {
                 >
                   <span className="username-text">{username}</span>
                   <svg
-                    className={`dropdown-arrow ${isDropdownOpen ? "rotated" : ""}`}
+                    className={`dropdown-arrow ${
+                      isDropdownOpen ? "rotated" : ""
+                    }`}
                     width="12"
                     height="8"
                     viewBox="0 0 12 8"
@@ -178,7 +146,6 @@ const Header = () => {
         </div>
       </nav>
 
-      {/* Burger Menu */}
       <svg
         className="burger-menu"
         width="44"
@@ -189,7 +156,14 @@ const Header = () => {
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         style={{ cursor: "pointer" }}
       >
-        <rect x="0.5" y="0.5" width="43" height="43" rx="21.5" stroke="#665F55" />
+        <rect
+          x="0.5"
+          y="0.5"
+          width="43"
+          height="43"
+          rx="21.5"
+          stroke="#665F55"
+        />
         <path
           ref={line1Ref}
           className={`line1 ${isMobileMenuOpen ? "x" : ""}`}

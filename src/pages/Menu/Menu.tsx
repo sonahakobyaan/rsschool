@@ -415,7 +415,11 @@ const Menu = () => {
           onClick={closeModal}
         >
           <div
-            className={`${modalLoading || !detailedProduct ?"loading-content" : "modal-content"}`}
+            className={`${
+              modalLoading || !detailedProduct
+                ? "loading-content"
+                : "modal-content"
+            }`}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="modal-body">
@@ -532,9 +536,8 @@ const Menu = () => {
                           : "Log in to unlock exclusive discounts up to 20% and earn loyalty points!"}
                       </p>
                     </div>
-
-                    <button className="modal-btn" onClick={closeModal}>
-                      Close
+                    <button className="modal-btn" onClick={isLoggedIn? closeModal : closeModal}>
+                      {isLoggedIn ? "Add to cart" : "Close"}
                     </button>
                   </div>
                 </>
