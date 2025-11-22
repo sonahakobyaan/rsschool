@@ -1,7 +1,12 @@
 import { api } from "@/api/api.ts";
 import type { Product } from "@/types/product";
 import { useEffect, useState } from "react";
-import Delete from "@/assets/icons/trash.svg"
+import Delete from "@/assets/icons/trash.svg";
+import { toFloat } from "@/utils/toFloat";
+import { isLoggedIn } from "@/utils/auth";
+import getCategoryImage from "@/pages/Menu/utils/getCategoryImage.ts";
+
+
 const Shop = () => {
   const [error, setError] = useState("");
   const [favorites, setFavorites] = useState<Product[]>([]);
@@ -17,12 +22,14 @@ const Shop = () => {
         console.error(err);
       }
     };
-  
+
     getFavorites();
   }, []);
-  
-  const totalPrice = 0
-  
+
+  const totalPrice = (favorites || []).reduce(
+    (sum, item) => sum + toFloat(isLoggedIn() ? item.discountPrice : item.price),
+    0
+  );
 
   return (
     <div className="sections">
@@ -35,12 +42,16 @@ const Shop = () => {
           {favorites.length === 0 && <p>Your cart is empty</p>}
 
           {favorites.map((item) => (
-            <div className="cart-row" key={item.id} data-price={item.discountPrice || item.price}>
+            <div
+              className="cart-row"
+              key={item.id}
+              data-price={item.discountPrice || item.price}
+            >
               <button className="delete-btn">
                 <img src={Delete} alt="Delete" />
               </button>
               <img
-                src={`./assets/${item.category}/${item.name.toLowerCase().replace(/\s/g, "-")}.svg`}
+                src={getCategoryImage(item.category, toFloat(item.id))}
                 alt={item.name}
                 className="product-image"
               />
@@ -48,7 +59,9 @@ const Shop = () => {
                 <p className="product-name">{item.name}</p>
                 <p className="product-details">{item.category}</p>
               </div>
-              <div className="product-price">${item.discountPrice || item.price}</div>
+              <div className="product-price">
+                ${isLoggedIn() ? item.discountPrice : item.price}
+              </div>
             </div>
           ))}
         </div>
