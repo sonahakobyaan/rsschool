@@ -1,21 +1,20 @@
 import { useEffect, useState } from "react";
 import { message } from "antd";
 
-import { dessert } from "@/assets/dessert/dessert.ts";
-import { coffee } from "@/assets/coffee/coffee.ts";
-import { tea } from "@/assets/tea/tea.ts";
 import { api } from "@/api/api";
 
 import dessertImg from "../../assets/icons/dessert.png";
 import coffeImg from "../../assets/icons/coffee.png";
 import teaImg from "../../assets/icons/tea.png";
 
+import getCategoryImage from "@/pages/Menu/utils/getCategoryImage.ts";
 import LoadMore from "@/pages/Menu/components/LoadMore.tsx";
 import { toFloat } from "@/utils/toFloat";
 import { isLoggedIn } from "@/utils/auth";
 
 import type { Product } from "@/types/product";
 import ProductModal from "./components/Modal";
+import { handleMobile } from "@/utils/mobile";
 
 const categories = ["coffee", "tea", "dessert"] as const;
 
@@ -34,7 +33,6 @@ const categoryLabels: Record<Category, string> = {
 };
 
 const INITIAL_MOBILE_COUNT = 4;
-const MOBILE_BREAKPOINT = 768;
 const LOAD_MORE_STEP = 4;
 
 const Menu = () => {
@@ -57,7 +55,7 @@ const Menu = () => {
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [selectedAdditives, setSelectedAdditives] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<Category>("coffee");
-
+  const isMobile = handleMobile();
   useEffect(() => {
     if (isLoggedIn()) {
       setLoggedIn(true);
@@ -72,10 +70,8 @@ const Menu = () => {
   }, []);
 
   useEffect(() => {
-    setVisibleCount(
-      windowWidth < MOBILE_BREAKPOINT ? INITIAL_MOBILE_COUNT : Infinity
-    );
-  }, [windowWidth, selectedCategory]);
+    setVisibleCount(isMobile ? INITIAL_MOBILE_COUNT : Infinity);
+  }, [windowWidth, isMobile]);
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -98,20 +94,6 @@ const Menu = () => {
       setFilteredProducts(filtered);
     }
   }, [selectedCategory, products]);
-
-  const getCategoryImage = (category: string, index: number) => {
-    const imageIndex = index + 1;
-    switch (category) {
-      case "coffee":
-        return coffee[imageIndex];
-      case "tea":
-        return tea[imageIndex];
-      case "dessert":
-        return dessert[imageIndex];
-      default:
-        return "";
-    }
-  };
 
   const openModal = async (product: Product, categoryIndex: number) => {
     setModalOpen(true);
@@ -155,8 +137,6 @@ const Menu = () => {
         : prev
     );
   };
-
-  const isMobile = windowWidth < MOBILE_BREAKPOINT;
   const displayedProducts = isMobile
     ? filteredProducts.slice(0, visibleCount)
     : filteredProducts;
