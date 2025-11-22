@@ -42,6 +42,7 @@ const Menu = () => {
   const [selectedAdditives, setSelectedAdditives] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<Category>("coffee");
   const isMobile = handleMobile();
+  
   useEffect(() => {
     if (isLoggedIn()) {
       setLoggedIn(true);

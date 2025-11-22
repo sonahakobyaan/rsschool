@@ -1,6 +1,8 @@
-import type { Product } from "@/types/product";
 import { calculatePrice } from "@/pages/Menu/utils/calculatePrice.ts";
 import empty from "@/assets/icons/info-empty.svg";
+import type { Product } from "@/types/product";
+import { api } from "@/api/api";
+import { message } from "antd";
 
 interface ProductModalProps {
   open: boolean;
@@ -37,6 +39,39 @@ export default function ProductModal({
   });
   const { base: price, discount: discountPrice, showDiscount } = priceResult;
 
+  const handleAddToCart = async () => {
+    if (!product || !selectedSize) {
+      message.error("Please select a size");
+      return;
+    }
+
+    const payload = {
+      items: [
+        {
+          productId: Number(product.id),
+          size: selectedSize,
+          additives: selectedAdditives,
+          quantity: 1,
+        },
+      ],
+      totalPrice: showDiscount ? discountPrice : price,
+    };
+
+    try {
+      const result = await api.handleConfirmOrder(payload);
+
+      if (!result.success) {
+        message.error(result.error);
+        return;
+      }
+
+      message.success(`${product.name} added to cart!`);
+      onClose();
+    } catch {
+      message.error("Failed to add item to cart");
+    }
+  };
+
   return (
     <div
       id="product-modal"
@@ -50,27 +85,37 @@ export default function ProductModal({
       >
         <div className="modal-body">
           {loading ? (
-            <div className="loader" style={{
-              position: "absolute",
-              inset: 0,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              background: "rgba(255,255,255,0.9)",
-              zIndex: 10,
-            }}>
+            <div
+              className="loader"
+              style={{
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "rgba(255,255,255,0.9)",
+                zIndex: 10,
+              }}
+            >
               <div className="loader"></div>
             </div>
           ) : (
             <>
               <img
                 id="modal-image"
-                src={getCategoryImage(product.category, product.categoryIndex || 0)}
+                src={getCategoryImage(
+                  product.category,
+                  product.categoryIndex || 0
+                )}
                 alt={product.name}
               />
               <div className="modal-content-text">
-                <h1 id="modal-title" className="about-h1">{product.name}</h1>
-                <p id="modal-description" className="descp">{product.description}</p>
+                <h1 id="modal-title" className="about-h1">
+                  {product.name}
+                </h1>
+                <p id="modal-description" className="descp">
+                  {product.description}
+                </p>
 
                 {product.sizes && Object.keys(product.sizes).length > 0 && (
                   <div id="size">
@@ -79,10 +124,14 @@ export default function ProductModal({
                       {Object.entries(product.sizes).map(([key, size]) => (
                         <button
                           key={key}
-                          className={`modal-size-btn ${selectedSize === key ? "selected" : ""}`}
+                          className={`modal-size-btn ${
+                            selectedSize === key ? "selected" : ""
+                          }`}
                           onClick={() => onSizeChange(key)}
                         >
-                          <div className="modal-size-bg">{key.toUpperCase()}</div>
+                          <div className="modal-size-bg">
+                            {key.toUpperCase()}
+                          </div>
                           <span className="size-text">{size.size}</span>
                         </button>
                       ))}
@@ -98,7 +147,9 @@ export default function ProductModal({
                         <button
                           key={i}
                           className={`modal-size-btn additive-btn ${
-                            selectedAdditives.includes(add.name) ? "selected" : ""
+                            selectedAdditives.includes(add.name)
+                              ? "selected"
+                              : ""
                           }`}
                           onClick={() => onAdditiveToggle(add.name)}
                           disabled={
@@ -140,7 +191,10 @@ export default function ProductModal({
                   </p>
                 </div>
 
-                <button className="modal-btn" onClick={onClose}>
+                <button
+                  className="modal-btn"
+                  onClick={loggedIn ? handleAddToCart : onClose}
+                >
                   {loggedIn ? "Add to cart" : "Close"}
                 </button>
               </div>
