@@ -92,7 +92,7 @@ const Header = () => {
           ))}
         </div>
         <div className="menu-right-hand">
-          <a href="/shop" id="shop">
+          <a href="/shoop" id="shop">
             <img src={shoppingBag} alt="Shopping bag" />
           </a>
           <a href="/menu">
