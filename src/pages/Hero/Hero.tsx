@@ -28,9 +28,8 @@ const Hero = () => {
         const favorites = await api.fetchFavorites();
         setCoffees(favorites);
         setError("");
-      } catch (err) {
+      } catch {
         setError("Failed to load favorite coffees");
-        console.error(err);
       } finally {
         setLoading(false);
       }

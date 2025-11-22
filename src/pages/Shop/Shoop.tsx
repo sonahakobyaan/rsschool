@@ -16,9 +16,8 @@ const Shoop = () => {
         const res = await api.fetchFavorites();
         setFavorites(res || []);
         setError("");
-      } catch (err) {
+      } catch {
         setError("Failed to load favorite coffees");
-        console.error(err);
       }
     };
 
